@@ -1,0 +1,10 @@
+/* Add a gray background color and some padding to the footer */
+.jumbotron {
+    padding: 1rem 2rem;
+    margin-bottom: 2rem;
+    margin-top: 1.5rem;
+}
+
+.fs-tiny {
+    font-size: 11px;
+}
