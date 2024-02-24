@@ -1,5 +1,11 @@
 {
+  "SECRET_KEY": "86a6a22f5d26035a68fe5bf47aa00f5be8c240cc6a872d64cc1837f2e7f2f5f1",
   "__comogerar": "python -c 'import secrets; print(secrets.token_hex())'",
-  "SECRET_KEY": "cb3909148792dcdf688ac8d3db56ed30a6b6258e19f94ef11864d87f4ce158f2",
-  "TIMEZONE": "America/Sao_Paulo"
+  "TIMEZONE": "America/Sao_Paulo",
+
+  "MINIFY": false,
+
+  "BOOTSTRAP_SERVE_LOCAL": true,
+  "__opcoes BOOTSTRAP_BOOTSWATCH_THEME": "sandstone, flatly, cosmo, lumen, cerulean, journal, yeti, sketchy",
+  "BOOTSTRAP_BOOTSWATCH_THEME": "sandstone"
 }

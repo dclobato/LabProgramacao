@@ -1,1 +1,3 @@
 Flask~=3.0
+Bootstrap-Flask~=2.3
+Flask-Minify~=0.42
