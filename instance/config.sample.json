@@ -1,0 +1,5 @@
+{
+  "__comogerar": "python -c 'import secrets; print(secrets.token_hex())'",
+  "SECRET_KEY": "cb3909148792dcdf688ac8d3db56ed30a6b6258e19f94ef11864d87f4ce158f2",
+  "TIMEZONE": "America/Sao_Paulo"
+}
