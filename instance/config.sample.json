@@ -7,5 +7,9 @@
 
   "BOOTSTRAP_SERVE_LOCAL": true,
   "__opcoes BOOTSTRAP_BOOTSWATCH_THEME": "sandstone, flatly, cosmo, lumen, cerulean, journal, yeti, sketchy",
-  "BOOTSTRAP_BOOTSWATCH_THEME": "sandstone"
+  "BOOTSTRAP_BOOTSWATCH_THEME": "sandstone",
+
+  "SQLALCHEMY_DATABASE_URI": "sqlite+pysqlite:///application_db.sqlite3",
+  "MIGRATION_DIR": "src/migrations",
+  "SQLITE_DB_NAME": "application_db.sqlite3"
 }
