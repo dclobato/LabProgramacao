@@ -2,12 +2,16 @@ import json
 import logging
 import os
 import shutil
+import uuid
 from pathlib import Path
 
 from flask import Flask, render_template
 from flask_migrate import init, upgrade, revision
+from sqlalchemy import select
 
-from src.modules import bootstrap, minify, db, migration
+from src.models.auth import User
+from src.modules import bootstrap, minify, db, migration, csrf, login
+from src.routes import auth
 
 
 def create_app(config_filename: str = "config.dev.json") -> Flask:
@@ -46,6 +50,17 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                        db,
                        directory=app.config.get("MIGRATION_DIR", "src/migrations"),
                        render_as_batch=False)
+    csrf.init_app(app)
+    login.init_app(app)
+
+    @login.user_loader
+    def load_user(user_id):
+        try:
+            auth_id = uuid.UUID(str(user_id))
+        except ValueError:
+            return None
+        else:
+            return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
 
     with app.app_context():
         # Se estivéssemos usando um SGBD, poderíamos consultar os metadados
@@ -65,6 +80,19 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                      autogenerate=True,
                      head="head")
             upgrade(revision="head")
+
+        if db.session.execute(select(User.id).limit(1)).scalar_one_or_none() is None:
+            app.logger.info("Adicionando usuário inicial")
+            usuario = User()
+            usuario.nome = "Administrador"
+            usuario.email = "admin@admin.com.br"
+            usuario.set_password("123")
+            usuario.email_validado = True
+            db.session.add(usuario)
+            db.session.commit()
+
+    app.logger.debug("Registrando as blueprints")
+    app.register_blueprint(auth.bp)
 
     @app.route("/")
     @app.route("/index")

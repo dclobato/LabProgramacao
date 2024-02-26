@@ -1,0 +1,33 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/form.html' import render_field %}
+
+{% block content %}
+    <div class="row w-50 mx-auto">
+        <form action="" method="post" class="form" role="form" novalidate>
+            {{ form.csrf_token() }}
+            {{ render_field(form.email) }}
+            {{ render_field(form.password) }}
+
+            <div class="row mb-4">
+                <div class="col d-flex justify-content-center">
+                    <div class="form-switch">
+                        {{ render_field(form.remember_me, role="switch") }}
+                    </div>
+                </div>
+                <div class="col">
+                    <a href="#">Esqueceu a senha?</a>
+                </div>
+            </div>
+
+            <!-- Submit button -->
+            <div class="row mb-4 col-6 mx-auto d-grid">
+                {{ render_field(form.submit, button_size="lg") }}
+            </div>
+
+            <!-- Register buttons -->
+            <div class="text-center">
+                Não tem uma conta? <a href="#">Crie uma!</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
