@@ -21,18 +21,20 @@
             <th scope="row" class="text-start">Última atualização</th>
             <td class="text-center">{{ current_user.dta_atualizacao | as_localtime }}</td>
         </tr>
+        {% if current_user.usa_2fa %}
         <tr>
             <th scope="row" class="text-start">Autenticação em dois fatores</th>
-            <td class="text-center">{% if current_user.usa_2fa %}
-                {{ render_icon('shield-fill-check', size=24, color="success") }}
-            {% else %}
-                {{ render_icon('shield-x', size=24, color="warning") }}
-            {% endif %}</td>
+            <td class="text-center">{{ render_icon('shield-fill-check', size=24, color="success") }}</td>
         </tr>
+            <tr>
+                <th scope="row">Códigos reserva disponíveis</th>
+                <td class="text-center">{{ current_user.lista_2fa_backup | length }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <th scope="row" class="text-start">Autenticação em dois fatores</th>
+                <td class="text-center">{{ render_icon('shield-x', size=24, color="warning") }}</td>
+            </tr>
+        {% endif %}
     </table>
-    <a href="{{ url_for('auth.user') }}">
-        <button type="button" class="btn btn-secondary btn-sm">
-            {{ render_icon("x-lg") }}Cancelar alterações
-        </button>
-    </a>
 {% endmacro %}

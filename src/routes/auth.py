@@ -151,6 +151,9 @@ def user():
         else:
             current_user.usa_2fa = False
             current_user.otp_secret = None
+            for codigo in current_user.lista_2fa_backup:
+                db.session.delete(codigo)
+            flash("Códigos de autenticação reservas foram removidos", category="info")
         db.session.commit()
         flash(message="Alterações efetuadas", category='success')
         return redirect(url_for("auth.user"))
@@ -171,9 +174,12 @@ def enable_2fa():
             try:
                 current_user.usa_2fa = True
                 current_user.dta_ativacao_2fa = datetime.datetime.now(tz=pytz.timezone('UTC'))
+                codigos = current_user.generate_2fa_backup(10)
                 db.session.commit()
                 flash("Autenticação em dois fatores ativada.", "success")
-                return redirect(url_for("auth.user"))
+                return render_template("auth/show_2fa_backup.jinja",
+                                       codigos=codigos,
+                                       title="Códigos reserva para autenticação")
             except Exception:
                 current_user.usa_2fa = False
                 current_user.otp_secret = None
@@ -204,12 +210,16 @@ def get2fa(user_id):
         usuario = get_user_by_id(user_id)
         if usuario is None:
             return redirect(url_for('auth.login'))
-        if usuario.usa_2fa and usuario.verify_totp(str(form.codigo.data)):
-            login_user(usuario, remember=bool(remember_me))
-            current_user.dta_ultimo_acesso = datetime.datetime.now(tz=pytz.timezone('UTC'))
-            db.session.commit()
-            if not next_page or urlsplit(next_page).netloc != '':
-                next_page = url_for('index')
-            flash(f'Usuario {usuario.email} logado', category="success")
-            return redirect(next_page)
+        token = str(form.codigo.data)
+        if usuario.usa_2fa:
+            if usuario.verify_totp(token=token) or usuario.verify_totp_backup(token=token):
+                login_user(usuario, remember=bool(remember_me))
+                current_user.dta_ultimo_acesso = datetime.datetime.now(tz=pytz.timezone('UTC'))
+                db.session.commit()
+                if not next_page or urlsplit(next_page).netloc != '':
+                    next_page = url_for('index')
+                flash(f'Usuario {usuario.email} logado', category="success")
+                return redirect(next_page)
+            else:
+                flash("Código incorreto", category="warning")
     return render_template('render_simple_form.jinja', title='Autenticação em dois fatores', form=form)

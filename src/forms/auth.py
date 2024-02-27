@@ -2,7 +2,7 @@ import re
 
 from flask_wtf import FlaskForm
 from wtforms.fields.simple import StringField, PasswordField, SubmitField, BooleanField
-from wtforms.validators import Email, InputRequired, EqualTo, ValidationError, ReadOnly, Length
+from wtforms.validators import Email, InputRequired, EqualTo, ValidationError, Length
 
 from src.utils import get_user_by_email
 
@@ -77,11 +77,10 @@ class RegistrationForm(FlaskForm, ValidaSenha):
 
 
 class ProfileForm(FlaskForm):
-    email = StringField("Email",
-                        validators=[ReadOnly()])
+    # email = StringField("Email", validators=[ReadOnly()])
     nome = StringField('Nome',
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
-    usa_2fa = BooleanField("Ativar 2FA")
+    usa_2fa = BooleanField("Ativar autenticação em dois fatores")
     submit = SubmitField("Efetuar mudanças")
 
 

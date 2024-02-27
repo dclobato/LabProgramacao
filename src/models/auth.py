@@ -1,3 +1,4 @@
+import random
 import uuid
 from hashlib import md5
 from time import time
@@ -7,7 +8,7 @@ import jwt.exceptions
 import pyotp
 import sqlalchemy as sa
 from flask_login import UserMixin
-from sqlalchemy.types import Uuid, String, DateTime, Boolean
+from sqlalchemy.types import Uuid, String, DateTime, Boolean, Integer
 # noinspection PyPackageRequirements
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -28,6 +29,10 @@ class User(db.Model, TimestampMixin, UserMixin):
     usa_2fa = sa.Column(Boolean, default=False)
     otp_secret = db.Column(String(32))
     dta_ativacao_2fa = sa.Column(DateTime, nullable=True)
+    lista_2fa_backup = sa.orm.relationship("Backup2FA",
+                                           back_populates="usuario",
+                                           lazy="selectin",
+                                           cascade="all, delete-orphan")
 
     @property
     def get_totp_uri(self) -> str:
@@ -74,3 +79,34 @@ class User(db.Model, TimestampMixin, UserMixin):
     def verify_totp(self, token) -> bool:
         totp = pyotp.TOTP(self.otp_secret)
         return totp.verify(token, valid_window=1)
+
+    def generate_2fa_backup(self, quantos: int = 5) -> list[str]:
+        # Remove os codigos anteriores
+        for codigo in self.lista_2fa_backup:
+            db.session.delete(codigo)
+        # Gera novos códigos
+        codigos = []
+        for _ in range(quantos):
+            codigo = "".join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(6))
+            codigos.append(codigo)
+            backup2fa = Backup2FA()
+            backup2fa.hash_codigo = generate_password_hash(codigo)
+            self.lista_2fa_backup.append(backup2fa)
+        return codigos
+
+    def verify_totp_backup(self, token) -> bool:
+        for codigo in self.lista_2fa_backup:
+            if check_password_hash(codigo.hash_codigo, token):
+                db.session.delete(codigo)
+                return True
+        return False
+
+
+class Backup2FA(db.Model):
+    __tablename__ = "backup2fa"
+
+    id = sa.Column(Integer, primary_key=True)
+    hash_codigo = sa.Column(String(256), nullable=False)
+    usuario_id = sa.Column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
+
+    usuario = sa.orm.relationship("User", back_populates="lista_2fa_backup")

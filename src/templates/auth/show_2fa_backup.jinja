@@ -1,0 +1,30 @@
+{% extends '_Layout.jinja' %}
+{% from 'auth/user-sidebar.jinja' import usersidebar with context %}
+
+{% block content %}
+    <div class="container d-flex">
+        <div class="me-auto">
+            {{ usersidebar() }}
+        </div>
+        <div class="ms-5 flex-grow-1">
+            <div class="alert alert-secondary w-50" role="alert">
+                <h4 class="alert-heading">Códigos reserva</h4>
+                <p>Guarde com cuidado os códigos abaixo. Eles podem ser
+                    usados para confirmação da autenticação de dois fatores quando
+                    você não tiver o seu autenticador disponível.</p>
+                <p>Eles serão mostrados apenas esta vez!</p>
+                <hr>
+                <ul>
+                    {% for codigo in codigos %}
+                        <li class="font-monospace">{{ codigo }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <a href="{{ url_for('auth.user') }}">
+                <button type="button" class="btn btn-primary btn-sm">
+                    Retornar ao perfil do usuário
+                </button>
+            </a>
+        </div>
+    </div>
+{% endblock %}
