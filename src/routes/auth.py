@@ -115,5 +115,13 @@ def register():
 
 @bp.route('/valida_email/<token>')
 def valida_email(token):
-    flash('Falta validar o email', category="info")
-    return redirect(url_for('auth.login'))
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    usuario, action = User.verify_jwt_token(token)
+    if usuario and not usuario.email_validado and action == "validate_email" :
+        usuario.email_validado = True
+        flash(f'Email {usuario.email} validado!', category="success")
+        db.session.commit()
+        return redirect(url_for('auth.login'))
+    flash('Token inválido', category="warning")
+    return redirect(url_for('index'))
