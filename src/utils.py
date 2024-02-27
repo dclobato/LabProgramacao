@@ -1,8 +1,12 @@
 import uuid
+from base64 import b64encode
 from datetime import date
+from io import BytesIO
 
 from flask import render_template, current_app
 from flask_mailman import EmailMessage
+from qrcode.main import QRCode
+
 from src.models.auth import User
 from src.modules import db
 
@@ -67,3 +71,14 @@ def as_localtime(value) -> str | date:
     except Exception as e:
         current_app.logger.warning(f"as_localtime: Exception: {e}")
         return value
+
+
+def get_b64encoded_qr_image(data):
+    print(data)
+    qr = QRCode(version=1, box_size=10, border=5)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='black', back_color='white')
+    buffered = BytesIO()
+    img.save(buffered)
+    return b64encode(buffered.getvalue()).decode("utf-8")

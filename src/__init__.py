@@ -66,6 +66,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         except ValueError:
             return None
         else:
+            # noinspection PyTestUnpassedFixture
             return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
 
     with app.app_context():
@@ -94,6 +95,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             usuario.email = "admin@admin.com.br"
             usuario.set_password("123")
             usuario.email_validado = True
+            usuario.usa_2fa = False
             db.session.add(usuario)
             db.session.commit()
 
