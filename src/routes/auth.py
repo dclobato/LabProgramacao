@@ -5,10 +5,10 @@ import pytz
 from flask import redirect, url_for, flash, request, render_template, Blueprint, current_app
 from flask_login import current_user, login_user, login_required, logout_user
 
-from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword
+from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm
 from src.models.auth import User
 from src.modules import db
-from src.utils import get_user_by_email, enviar_email_reset_senha
+from src.utils import get_user_by_email, enviar_email_reset_senha, enviar_email_novo_usuario
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -88,3 +88,32 @@ def new_password():
         else:
             current_app.logger.info(f"Pedido de reset de senha para usuario inexistente ({form.email.data})")
     return render_template('auth/new_password.jinja', title='Esqueci minha senha', form=form)
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        usuario = User()
+        usuario.nome = form.nome.data
+        usuario.email = form.email.data
+        usuario.set_password(form.password.data)
+        usuario.email_validado = False
+        db.session.add(usuario)
+        db.session.flush()
+        db.session.refresh(usuario)
+        user_id = usuario.id
+        db.session.commit()
+        flash('Cadastro efetuado com sucesso. Confirme seu email antes de logar no sistema', category="success")
+        if not enviar_email_novo_usuario(user_id):
+            current_app.logger.warning(f"Email de ativação para para o usuario {str(user_id)} não enviado")
+        return redirect(url_for('auth.login'))
+    return render_template('auth/register.jinja', title='Cadastro de usuário', form=form)
+
+
+@bp.route('/valida_email/<token>')
+def valida_email(token):
+    flash('Falta validar o email', category="info")
+    return redirect(url_for('auth.login'))

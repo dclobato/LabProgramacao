@@ -34,3 +34,19 @@ def enviar_email_reset_senha(user_id: uuid.UUID) -> bool:
                                host=current_app.config.get("APP_BASE_URL", "http://127.0.0.1:5000"))
     msg.send(fail_silently=True)
     return True
+
+
+def enviar_email_novo_usuario(user_id: uuid.UUID) -> bool:
+    usuario = get_user_by_id(user_id)
+    if usuario is None:
+        return False
+
+    msg = EmailMessage()
+    msg.to = [usuario.email]
+    msg.subject = "[App2024] Ative a sua conta"
+    msg.body = render_template("auth/email/confirmation-email.jinja",
+                               user=usuario,
+                               token=usuario.create_jwt_token("validate_email"),
+                               host=current_app.config.get("APP_BASE_URL", "http://127.0.0.1:5000"))
+    msg.send(fail_silently=True)
+    return True

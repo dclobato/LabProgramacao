@@ -1,0 +1,7 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+    <!-- novalidate=True implica em server-side validation -->
+    {{ render_form(form, button_style='primary', button_size='lg', novalidate=True) }}
+{% endblock %}

@@ -4,6 +4,8 @@ from flask_wtf import FlaskForm
 from wtforms.fields.simple import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import Email, InputRequired, EqualTo, ValidationError
 
+from src.utils import get_user_by_email
+
 
 # noinspection PyMethodMayBeStatic
 class ValidaSenha:
@@ -51,3 +53,23 @@ class SetNewPasswordForm(FlaskForm, ValidaSenha):
                               validators=[InputRequired(message="É necessário repetir a senha"),
                                           EqualTo('password', message="As senhas não são iguais")])
     submit = SubmitField('Cadastrar a nova senha')
+
+
+class RegistrationForm(FlaskForm, ValidaSenha):
+    nome = StringField('Nome',
+                       validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
+    email = StringField("Email",
+                        validators=[InputRequired(message="É obrigatório informar o email do cadastro"),
+                                    Email(message="Informe um email válido", check_deliverability=False)])
+
+    password = PasswordField('Senha',
+                             validators=[InputRequired(message="É necessário escolher uma senha")])
+    password2 = PasswordField('Confirme a senha',
+                              validators=[InputRequired(message="É necessário repetir a senha"),
+                                          EqualTo('password', message="As senhas não são iguais")])
+    submit = SubmitField('Adicionar usuário')
+
+    def validate_email(self, email):
+        user = get_user_by_email(email.data)
+        if user is not None:
+            raise ValidationError('Este email já está cadastrado')
