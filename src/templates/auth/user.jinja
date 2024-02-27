@@ -1,0 +1,41 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/form.html' import render_form, render_field %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+    <!-- novalidate=True implica em server-side validation -->
+    <div class="container d-flex">
+        <div class="me-auto">
+            <table class="table table-sm small">
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <img src="{{ current_user.url_gravatar(256) }}"
+                             class="rounded-circle me-3 mb-4"
+                             alt="Avatar do usuário"/><br />
+                        <div class="mx-auto mb-5"><strong>{{ current_user.email }}</strong></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Registrado em</th>
+                    <td>{{ current_user.dta_cadastro | as_localtime }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Último acesso</th>
+                    <td>{{ current_user.ultimo_acesso | as_localtime }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Última atualização</th>
+                    <td>{{ current_user.dta_atualizacao | as_localtime }}</td>
+                </tr>
+            </table>
+            <a href="{{ url_for('index') }}">
+                <button type="button" class="btn btn-secondary btn-sm">
+                    {{ render_icon("x-lg") }}Cancelar alterações
+                </button>
+            </a>
+        </div>
+        <div class="ms-5 flex-grow-1">
+            {{ render_form(form, button_style='primary', button_size='lg', novalidate=True) }}
+        </div>
+    </div>
+{% endblock %}

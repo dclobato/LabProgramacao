@@ -5,7 +5,7 @@ import pytz
 from flask import redirect, url_for, flash, request, render_template, Blueprint, current_app
 from flask_login import current_user, login_user, login_required, logout_user
 
-from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm
+from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm, ProfileForm
 from src.models.auth import User
 from src.modules import db
 from src.utils import get_user_by_email, enviar_email_reset_senha, enviar_email_novo_usuario
@@ -125,3 +125,15 @@ def valida_email(token):
         return redirect(url_for('auth.login'))
     flash('Token inválido', category="warning")
     return redirect(url_for('index'))
+
+
+@bp.route("/user/", methods=['GET', 'POST'])
+@login_required
+def user():
+    form = ProfileForm(obj=current_user)
+    if form.validate_on_submit():
+        current_user.nome = form.nome.data
+        db.session.commit()
+        flash(message="Alterações efetuadas", category='success')
+        return redirect(url_for("auth.user"))
+    return render_template("auth/user.jinja", form=form, title="Perfil do usuário")

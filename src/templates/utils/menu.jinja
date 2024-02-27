@@ -60,7 +60,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.register') }}">{{ render_icon('person-plus') }}&nbsp;Criar conta</a></li>
                         {% else %}
-                            <li><a class="dropdown-item" href="#">{{ render_icon('person') }}&nbsp;Perfil</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.user') }}">{{ render_icon('person') }}&nbsp;Perfil</a></li>
                             <li><a class="dropdown-item" href="#">{{ render_icon('toggles') }}&nbsp;Configuração</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">{{ render_icon('box-arrow-right') }}&nbsp;Logout</a>

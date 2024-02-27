@@ -12,6 +12,7 @@ from sqlalchemy import select
 from src.models.auth import User
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
 from src.routes import auth
+from src.utils import as_localtime
 
 
 def create_app(config_filename: str = "config.dev.json") -> Flask:
@@ -53,6 +54,10 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     csrf.init_app(app)
     login.init_app(app)
     mail.init_app(app)
+
+    # Formatando as datas para horário local
+    # https://stackoverflow.com/q/65359968
+    app.jinja_env.filters["as_localtime"] = as_localtime
 
     @login.user_loader
     def load_user(user_id):

@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from datetime import date
 
 from flask import render_template, current_app
 from flask_mailman import EmailMessage
@@ -50,3 +50,20 @@ def enviar_email_novo_usuario(user_id: uuid.UUID) -> bool:
                                host=current_app.config.get("APP_BASE_URL", "http://127.0.0.1:5000"))
     msg.send(fail_silently=True)
     return True
+
+
+# Formatando as datas para horário local
+# https://stackoverflow.com/q/65359968
+def as_localtime(value) -> str | date:
+    import pytz
+    from flask import current_app
+    tz = current_app.config.get("TIMEZONE", "America/Sao_Paulo")
+    try:
+        formato = "%Y-%m-%d, %H:%M"
+        utc = pytz.timezone('UTC')
+        tz_aware_dt = utc.localize(value)
+        local_dt = tz_aware_dt.astimezone(pytz.timezone(tz))
+        return local_dt.strftime(formato)
+    except Exception as e:
+        current_app.logger.warning(f"as_localtime: Exception: {e}")
+        return value
