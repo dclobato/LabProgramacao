@@ -11,5 +11,13 @@
 
   "SQLALCHEMY_DATABASE_URI": "sqlite+pysqlite:///application_db.sqlite3",
   "MIGRATION_DIR": "src/migrations",
-  "SQLITE_DB_NAME": "application_db.sqlite3"
+  "SQLITE_DB_NAME": "application_db.sqlite3",
+
+  "MAIL_SERVER": "smtp.sendgrid.net",
+  "MAIL_PORT": "587",
+  "MAIl_USERNAME": "apikey",
+  "MAIL_PASSWORD": "XXXXX",
+  "MAIL_DEFAULT_SENDER": "xxxxx",
+  "MAIL_USE_LOCALTIME": true,
+  "MAIL_BACKEND": "console"
 }

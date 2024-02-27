@@ -10,12 +10,12 @@
 
             <div class="row mb-4">
                 <div class="col d-flex justify-content-center">
-                    <div class="form-switch">
-                        {{ render_field(form.remember_me, role="switch") }}
+                    <div class="form-check">
+                        {{ render_field(form.remember_me) }}
                     </div>
                 </div>
                 <div class="col">
-                    <a href="#">Esqueceu a senha?</a>
+                    <a href="{{ url_for("auth.new_password") }}">Esqueceu a senha?</a>
                 </div>
             </div>
 

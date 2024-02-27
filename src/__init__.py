@@ -10,7 +10,7 @@ from flask_migrate import init, upgrade, revision
 from sqlalchemy import select
 
 from src.models.auth import User
-from src.modules import bootstrap, minify, db, migration, csrf, login
+from src.modules import bootstrap, minify, db, migration, csrf, login, mail
 from src.routes import auth
 
 
@@ -52,6 +52,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                        render_as_batch=False)
     csrf.init_app(app)
     login.init_app(app)
+    mail.init_app(app)
 
     @login.user_loader
     def load_user(user_id):
