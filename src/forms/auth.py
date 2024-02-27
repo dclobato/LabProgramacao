@@ -2,7 +2,7 @@ import re
 
 from flask_wtf import FlaskForm
 from wtforms.fields.simple import StringField, PasswordField, SubmitField, BooleanField
-from wtforms.validators import Email, InputRequired, EqualTo, ValidationError, ReadOnly
+from wtforms.validators import Email, InputRequired, EqualTo, ValidationError, ReadOnly, Length
 
 from src.utils import get_user_by_email
 
@@ -55,6 +55,7 @@ class SetNewPasswordForm(FlaskForm, ValidaSenha):
     submit = SubmitField('Cadastrar a nova senha')
 
 
+# noinspection PyMethodMayBeStatic
 class RegistrationForm(FlaskForm, ValidaSenha):
     nome = StringField('Nome',
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
@@ -80,4 +81,12 @@ class ProfileForm(FlaskForm):
                         validators=[ReadOnly()])
     nome = StringField('Nome',
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
+    usa_2fa = BooleanField("Ativar 2FA")
     submit = SubmitField("Efetuar mudanças")
+
+
+class Read2FACodeForm(FlaskForm):
+    codigo = StringField("Código",
+                         validators=[InputRequired(message="Informe o código fornecido pelo aplicativo autenticador"),
+                                     Length(min=6, max=6)])
+    submit = SubmitField("Enviar código")
