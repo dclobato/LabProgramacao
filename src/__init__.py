@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 import shutil
 import uuid
 from pathlib import Path
@@ -10,6 +11,8 @@ from flask_migrate import init, upgrade, revision
 from sqlalchemy import select
 
 from src.models.auth import User
+from src.models.categoria import Categoria
+from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
 from src.routes import auth
 from src.utils import as_localtime
@@ -88,6 +91,24 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                      head="head")
             upgrade(revision="head")
 
+            if db.session.execute(select(Categoria.id).limit(1)).scalar_one_or_none() is None:
+                from src.models.seed import seed_data
+                app.logger.info("Semeando as tabelas")
+                for seed in seed_data:
+                    categoria = Categoria()
+                    categoria.nome = seed["categoria"]
+                    db.session.add(categoria)
+                    for p in seed["produtos"]:
+                        produto = Produto()
+                        produto.nome = p["nome"]
+                        produto.preco = p["preco"]
+                        produto.estoque = random.randrange(-5, 60)
+                        produto.ativo = random.random() < 0.8
+                        produto.categoria = categoria
+                        db.session.add(produto)
+                    db.session.commit()
+                app.logger.info("Semeadura das tabelas concluída")
+
         if db.session.execute(select(User.id).limit(1)).scalar_one_or_none() is None:
             app.logger.info("Adicionando usuário inicial")
             usuario = User()
@@ -96,6 +117,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             usuario.set_password("123")
             usuario.email_validado = True
             usuario.usa_2fa = False
+            app.logger.info(f"Ususario '{usuario.email}', senha '123'")
             db.session.add(usuario)
             db.session.commit()
 

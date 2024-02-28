@@ -151,9 +151,10 @@ def user():
         else:
             current_user.usa_2fa = False
             current_user.otp_secret = None
+            if len(current_user.lista_2fa_backup) > 0:
+                flash("Códigos de autenticação reservas foram removidos", category="info")
             for codigo in current_user.lista_2fa_backup:
                 db.session.delete(codigo)
-            flash("Códigos de autenticação reservas foram removidos", category="info")
         db.session.commit()
         flash(message="Alterações efetuadas", category='success')
         return redirect(url_for("auth.user"))

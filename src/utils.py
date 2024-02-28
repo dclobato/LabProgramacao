@@ -74,7 +74,6 @@ def as_localtime(value) -> str | date:
 
 
 def get_b64encoded_qr_image(data):
-    print(data)
     qr = QRCode(version=1, box_size=10, border=5)
     qr.add_data(data)
     qr.make(fit=True)
