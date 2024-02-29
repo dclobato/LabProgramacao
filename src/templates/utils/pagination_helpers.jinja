@@ -9,3 +9,13 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro nome_parcial(q) %}
+    <div class="p-2">
+        <div class="input-group input-group-sm">
+            <div class="input-group-text">Nome parcial</div>
+            <input name="q" type="text" class="form-control-sm" id="nomeparcial" placeholder=""
+                    {% if q %} value="{{ q }}"{% endif %}>
+        </div>
+    </div>
+{% endmacro %}

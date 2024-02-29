@@ -1,5 +1,6 @@
 import werkzeug.exceptions
 from flask import Blueprint, render_template, request, current_app, flash
+from sqlalchemy.sql.operators import ilike_op
 
 from src.models.categoria import Categoria
 from src.modules import db
@@ -14,11 +15,16 @@ def lista():
 
     page = request.args.get("page", default=1, type=int)
     pp = request.args.get("pp", default=10, type=int)
+    q = request.args.get("q", default=None, type=str)
 
     sentenca = db.select(Categoria)
 
     if pp > MAXPERPAGE:
         pp = MAXPERPAGE
+
+    # Filtrar por parte do nome
+    if q:
+        sentenca = sentenca.filter(ilike_op(Categoria.nome, f"%{q}%"))
 
     sentenca = sentenca.order_by(Categoria.nome)
 
@@ -36,4 +42,5 @@ def lista():
                            rset_page=rset_page,
                            page=page,
                            pp=pp,
+                           q=q,
                            title="Lista de categorias")

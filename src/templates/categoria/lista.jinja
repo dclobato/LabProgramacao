@@ -1,7 +1,7 @@
 {% extends '_Layout.jinja' %}
 {% from 'bootstrap5/utils.html' import render_icon %}
 {% from 'bootstrap5/pagination.html' import render_pagination %}
-{% from 'utils/pagination_helpers.jinja' import linhas_por_pagina %}
+{% from 'utils/pagination_helpers.jinja' import linhas_por_pagina, nome_parcial %}
 
 {% block content %}
     <div class="row justify-content-center">
@@ -10,6 +10,7 @@
                 <div class="float-start small">
                     <div class="hstack gap-3">
                         {{ linhas_por_pagina(pp) }}
+                        {{ nome_parcial(q) }}
                     </div>
                 </div>
                 <div class="float-end">
