@@ -14,7 +14,7 @@ from src.models.auth import User
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.routes import auth
+from src.routes import auth, categoria
 from src.utils import as_localtime
 
 
@@ -45,9 +45,13 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         app.logger.fatal(f"Exception: {e}")
         exit(1)
 
+    if app.config.get("SECRET_KEY", None) is None:
+        app.logger.fatal(f"Necessário definir a SECRET_KEY da aplicação no arquivo {config_filename}")
+        exit(1)
+
     app.logger.debug("Inicializando módulos básicos")
     bootstrap.init_app(app)
-    if app.config["MINIFY"]:
+    if app.config.get("MINIFY", True):
         minify.init_app(app)
     db.init_app(app)
     migration.init_app(app,
@@ -72,13 +76,17 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             # noinspection PyTestUnpassedFixture
             return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
 
+    app.logger.debug("Registrando as blueprints")
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(categoria.bp)
+
     with app.app_context():
         # Se estivéssemos usando um SGBD, poderíamos consultar os metadados
         # do esquema com algo como a linha abaixo para o MariaDB/MySQL
         # SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'DBName'
         # Como o sqlite é um arquivo no sistema de arquivos, vamos simplesmente
         # verificar se o arquivo existe
-        arquivo = Path(app.instance_path) / Path(app.config["SQLITE_DB_NAME"])
+        arquivo = Path(app.instance_path) / Path(app.config.get("SQLITE_DB_NAME", "application_db.sqlite3"))
         if not arquivo.is_file():
             app.logger.info(f"Criando o banco de dados em {arquivo}")
             if Path(migration.directory).is_dir():
@@ -110,19 +118,40 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                 app.logger.info("Semeadura das tabelas concluída")
 
         if db.session.execute(select(User.id).limit(1)).scalar_one_or_none() is None:
-            app.logger.info("Adicionando usuário inicial")
+            email = "admin@admin.com.br"
+            senha = "123"
+            app.logger.info(f"Adicionando usuário inicial ({email}:{senha})")
             usuario = User()
             usuario.nome = "Administrador"
-            usuario.email = "admin@admin.com.br"
-            usuario.set_password("123")
+            usuario.email = email
+            usuario.set_password(senha)
             usuario.email_validado = True
             usuario.usa_2fa = False
             app.logger.info(f"Ususario '{usuario.email}', senha '123'")
             db.session.add(usuario)
             db.session.commit()
 
-    app.logger.debug("Registrando as blueprints")
-    app.register_blueprint(auth.bp)
+        if db.session.execute(select(Categoria.id).limit(1)).scalar_one_or_none() is None:
+            from src.models.seed import seed_data
+            app.logger.info("Semeando as tabelas")
+            cc = pc = 0
+            for seed in seed_data:
+                cc += 1
+                c = Categoria()
+                c.nome = seed["categoria"]
+                db.session.add(c)
+                for p in seed["produtos"]:
+                    pc += 1
+                    produto = Produto()
+                    produto.nome = p["nome"]
+                    produto.preco = p["preco"]
+                    produto.estoque = random.randrange(-5, 60)
+                    produto.ativo = random.random() < 0.85
+                    produto.categoria = c
+                    db.session.add(produto)
+                db.session.commit()
+            app.logger.info("Semeadura das tabelas concluída")
+            app.logger.info(f"Adicionados {pc} produtos em {cc} categorias")
 
     @app.route("/")
     @app.route("/index")

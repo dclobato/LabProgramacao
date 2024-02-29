@@ -44,7 +44,7 @@ class User(db.Model, TimestampMixin, UserMixin):
         from flask import current_app
         try:
             payload = jwt.decode(token,
-                                 key=current_app.config["SECRET_KEY"],
+                                 key=current_app.config.get("SECRET_KEY"),
                                  algorithms=["HS256"])
         except Exception as e:
             current_app.logger.error(f"JWT Token validation: {e}")
@@ -73,7 +73,7 @@ class User(db.Model, TimestampMixin, UserMixin):
             "exp": time() + expires_in
         }
         return jwt.encode(payload=payload,
-                          key=current_app.config["SECRET_KEY"],
+                          key=current_app.config.get("SECRET_KEY"),
                           algorithm="HS256")
 
     def verify_totp(self, token) -> bool:

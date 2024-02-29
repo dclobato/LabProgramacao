@@ -1,0 +1,30 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col" class="text-end"># Produtos</th>
+                <th scope="col" class="text-center">Ações</th>
+            </tr>
+            <tbody>
+            {% for categoria in rset %}
+            <tr>
+                <td>{{ categoria.nome }}</td>
+                <td class="text-end">{{ categoria.lista_de_produtos | count }}</td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        <a class="btn btn-outline-secondary btn-sm" href="#">
+                            {{ render_icon("pencil-square", title="Alterar") }}</a>
+                        <a class="btn btn-outline-danger btn-sm" href="#">
+                            {{ render_icon("trash", title="Excluir") }}</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
