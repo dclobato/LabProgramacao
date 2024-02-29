@@ -1,0 +1,35 @@
+{% extends '_Layout.jinja' %}
+{% from 'categoria/categoria-sidebar.jinja' import categoriasidebar %}
+
+{% block content %}
+<!-- novalidate=True implica em server-side validation -->
+<div class="container d-flex">
+    <div class="me-auto">
+        {{ categoriasidebar(categoria) }}
+    </div>
+    <div class="ms-5 flex-grow-1">
+        <table class="table table-sm">
+            <tr>
+                <th scope="row">Nome</th>
+                <td>{{ categoria.nome }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Alguns produtos da categoria</th>
+                <td class="small">
+                    <ul class="list-group">
+                        {% for produto in categoria.lista_de_produtos[:10] %}
+                            <li class="list-group-item">{{ produto.nome }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+        </table>
+        <form action="" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-danger float-end">Remover a categoria e todos
+                os {{ categoria.lista_de_produtos | length }} produtos
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

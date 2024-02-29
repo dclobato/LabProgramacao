@@ -35,7 +35,7 @@
                         <div class="btn-group" role="group">
                             <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('categoria.edit', id_categoria=categoria['id']) }}">
                                 {{ render_icon("pencil-square", title="Alterar") }}</a>
-                            <a class="btn btn-outline-danger btn-sm" href="#">
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('categoria.remove', id_categoria=categoria['id']) }}">
                                 {{ render_icon("trash", title="Excluir") }}</a>
                         </div>
                     </td>

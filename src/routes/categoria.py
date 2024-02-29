@@ -79,3 +79,20 @@ def edit(id_categoria):
         return redirect(url_for("categoria.lista"))
 
     return render_template("categoria/edit.jinja", form=form, categoria=categoria, title="Alterar categoria")
+
+
+@bp.route("/remove/<uuid:id_categoria>", methods=["GET", "POST"])
+@login_required
+def remove(id_categoria):
+    categoria = db.session.get(Categoria, id_categoria)
+    if categoria is None:
+        flash("Categoria inexistente!", category='danger')
+        return redirect(url_for('categoria.lista'))
+
+    if request.method == "POST":  # confirmação da remoção
+        flash(message=f"Categoria '{categoria.nome}' e produtos removidos!", category='success')
+        db.session.delete(categoria)
+        db.session.commit()
+        return redirect(url_for("categoria.lista"))
+
+    return render_template("categoria/remove.jinja", categoria=categoria, title="Remover categoria")
