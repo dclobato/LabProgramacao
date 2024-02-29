@@ -6,6 +6,7 @@ import shutil
 import uuid
 from pathlib import Path
 
+from email_validator import validate_email
 from flask import Flask, render_template
 from flask_migrate import init, upgrade, revision
 from sqlalchemy import select
@@ -128,7 +129,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             app.logger.info(f"Adicionando usuário inicial ({email}:{senha})")
             usuario = User()
             usuario.nome = "Administrador"
-            usuario.email = email
+            usuario.email = validate_email(email).normalized
             usuario.set_password(senha)
             usuario.email_validado = True
             usuario.usa_2fa = False

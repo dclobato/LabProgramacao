@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 
 import pyotp
 import pytz
+from email_validator import validate_email
 from flask import redirect, url_for, flash, request, render_template, Blueprint, current_app
 from flask_login import current_user, login_user, login_required, logout_user
 
@@ -22,7 +23,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        usuario = get_user_by_email(form.email.data)
+        usuario = get_user_by_email(validate_email(form.email.data).normalized)
 
         if usuario is None:
             flash('Email ou senha incorretos', category="warning")
@@ -86,16 +87,18 @@ def new_password():
         return redirect(url_for('index'))
     form = AskToResetPassword()
     if form.validate_on_submit():
-        usuario = get_user_by_email(form.email.data)
-        flash(f"Se houver uma conta com o email {form.email.data}, uma mensagems será enviada "
-              f"com as instruções para redefinir a senha",
-              category="success")
+        usuario = get_user_by_email(validate_email(form.email.data).normalized)
+        flash(
+            f"Se houver uma conta com o email {validate_email(form.email.data).normalized}, uma mensagems será enviada "
+            f"com as instruções para redefinir a senha",
+            category="success")
         if usuario:
             if not enviar_email_reset_senha(usuario.id):
                 current_app.logger.warning(f"Email de reset de senha para o usuario {str(usuario.id)} não enviado")
             return redirect(url_for('auth.login'))
         else:
-            current_app.logger.info(f"Pedido de reset de senha para usuario inexistente ({form.email.data})")
+            current_app.logger.info(
+                f"Pedido de reset de senha para usuario inexistente ({validate_email(form.email.data).normalized})")
     return render_template('render_simple_form.jinja', title='Esqueci minha senha', form=form)
 
 
@@ -107,7 +110,7 @@ def register():
     if form.validate_on_submit():
         usuario = User()
         usuario.nome = form.nome.data
-        usuario.email = form.email.data
+        usuario.email = validate_email(form.email.data).normalized
         usuario.set_password(form.password.data)
         usuario.email_validado = False
         usuario.usa_2fa = False

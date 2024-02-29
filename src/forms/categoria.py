@@ -7,3 +7,9 @@ class NovoCategoriaForm(FlaskForm):
     nome = StringField("Nome da categoria",
                        validators=[DataRequired(message="É obrigatório informar um nome para a categoria")])
     submit = SubmitField("Adicionar")
+
+
+class EditCategoriaForm(FlaskForm):
+    nome = StringField("Nome da categoria",
+                       validators=[DataRequired(message="É obrigatório informar um nome para a categoria")])
+    submit = SubmitField("Alterar")

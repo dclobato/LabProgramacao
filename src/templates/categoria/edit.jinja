@@ -1,0 +1,15 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/form.html' import render_form %}
+{% from 'categoria/categoria-sidebar.jinja' import categoriasidebar %}
+
+{% block content %}
+<!-- novalidate=True implica em server-side validation -->
+<div class="container d-flex">
+    <div class="me-auto">
+        {{ categoriasidebar(categoria) }}
+    </div>
+    <div class="ms-5 flex-grow-1">
+        {{ render_form(form, button_style='primary', button_size='lg', novalidate=True) }}
+    </div>
+</div>
+{% endblock %}
