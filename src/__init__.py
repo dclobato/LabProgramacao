@@ -10,11 +10,12 @@ from flask import Flask, render_template
 from flask_migrate import init, upgrade, revision
 from sqlalchemy import select
 
+import src.routes.auth
+import src.routes.categoria
 from src.models.auth import User
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.routes import auth, categoria
 from src.utils import as_localtime
 
 
@@ -77,8 +78,8 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
 
     app.logger.debug("Registrando as blueprints")
-    app.register_blueprint(auth.bp)
-    app.register_blueprint(categoria.bp)
+    app.register_blueprint(src.routes.auth.bp)
+    app.register_blueprint(src.routes.categoria.bp)
 
     with app.app_context():
         # Se estivéssemos usando um SGBD, poderíamos consultar os metadados

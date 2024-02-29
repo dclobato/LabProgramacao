@@ -1,0 +1,11 @@
+{% macro linhas_por_pagina(pp) %}
+    <div class="p-2">
+        <div class="input-group input-group-sm">
+            <div class="input-group-text">Linhas por página</div>
+            <select name="pp" class="form-select form-select-sm" id="pp">
+            {% for qtd in [10, 25, 50, 100] %}
+                <option value="{{ qtd }}"{% if qtd == pp %} selected{% endif %}>{{ qtd }}</option>{% endfor %}
+            </select>
+        </div>
+    </div>
+{% endmacro %}
