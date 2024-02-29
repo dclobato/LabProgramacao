@@ -60,8 +60,12 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                        directory=app.config.get("MIGRATION_DIR", "src/migrations"),
                        render_as_batch=False)
     csrf.init_app(app)
-    login.init_app(app)
     mail.init_app(app)
+    login.init_app(app)
+    login.login_view = "auth.login"
+    login.login_message = "É necessário estar logado para acessar esta funcionalidade"
+    login.login_message_category = "warning"
+    login.session_protection = "strong"
 
     # Formatando as datas para horário local
     # https://stackoverflow.com/q/65359968

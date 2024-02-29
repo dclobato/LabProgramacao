@@ -1,7 +1,8 @@
 import werkzeug.exceptions
-from flask import Blueprint, render_template, request, current_app, flash
-from sqlalchemy.sql.operators import ilike_op
+from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
+from flask_login import login_required
 
+from src.forms.categoria import NovoCategoriaForm
 from src.models.categoria import Categoria
 from src.modules import db
 
@@ -24,7 +25,7 @@ def lista():
 
     # Filtrar por parte do nome
     if q:
-        sentenca = sentenca.filter(ilike_op(Categoria.nome, f"%{q}%"))
+        sentenca = sentenca.filter(Categoria.nome.ilike(f"%{q}%"))
 
     sentenca = sentenca.order_by(Categoria.nome)
 
@@ -44,3 +45,19 @@ def lista():
                            pp=pp,
                            q=q,
                            title="Lista de categorias")
+
+
+@bp.route("/novo", methods=["GET", "POST"])
+@login_required
+def novo():
+    form = NovoCategoriaForm()
+    if form.validate_on_submit():
+        categoria = Categoria()
+        categoria.nome = form.nome.data
+        db.session.add(categoria)
+        db.session.commit()
+        flash(message=f"Categoria '{form.nome.data}' adicionada", category="success")
+        return redirect(url_for('categoria.lista'))
+    return render_template("render_simple_form.jinja",
+                           title="Nova categoria",
+                           form=form)

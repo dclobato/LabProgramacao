@@ -2,12 +2,14 @@ import random
 import uuid
 from hashlib import md5
 from time import time
+from typing import Optional
 
 import jwt
 import jwt.exceptions
 import pyotp
 import sqlalchemy as sa
 from flask_login import UserMixin
+from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy.types import Uuid, String, DateTime, Boolean, Integer
 # noinspection PyPackageRequirements
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -19,16 +21,16 @@ from src.modules import db
 class User(db.Model, TimestampMixin, UserMixin):
     __tablename__ = "usuarios"
 
-    id = sa.Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    nome = sa.Column(String(60), nullable=False)
-    email = sa.Column(String(60), nullable=False, unique=True)
-    password_hash = sa.Column(String(256), nullable=False)
-    email_validado = sa.Column(Boolean, default=False)
-    dta_ultimo_acesso = sa.Column(DateTime, nullable=True)
+    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nome: Mapped[str] = mapped_column(String(60), nullable=False)
+    email: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    email_validado: Mapped[Boolean] = mapped_column(Boolean, default=False)
+    dta_ultimo_acesso: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
 
-    usa_2fa = sa.Column(Boolean, default=False)
-    otp_secret = db.Column(String(32))
-    dta_ativacao_2fa = sa.Column(DateTime, nullable=True)
+    usa_2fa: Mapped[Boolean] = mapped_column(Boolean, default=False)
+    otp_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    dta_ativacao_2fa: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
     lista_2fa_backup = sa.orm.relationship("Backup2FA",
                                            back_populates="usuario",
                                            lazy="selectin",
@@ -60,6 +62,7 @@ class User(db.Model, TimestampMixin, UserMixin):
         return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
     def set_password(self, password):
+        # noinspection PyTypeChecker
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password) -> bool:
@@ -105,8 +108,8 @@ class User(db.Model, TimestampMixin, UserMixin):
 class Backup2FA(db.Model):
     __tablename__ = "backup2fa"
 
-    id = sa.Column(Integer, primary_key=True)
-    hash_codigo = sa.Column(String(256), nullable=False)
-    usuario_id = sa.Column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
+    id: Mapped[Integer] = mapped_column(Integer, primary_key=True)
+    hash_codigo: Mapped[str] = mapped_column(String(256), nullable=False)
+    usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
 
     usuario = sa.orm.relationship("User", back_populates="lista_2fa_backup")
