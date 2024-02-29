@@ -13,6 +13,7 @@ from sqlalchemy import select
 
 import src.routes.auth
 import src.routes.categoria
+import src.routes.produto
 from src.models.auth import User
 from src.models.categoria import Categoria
 from src.models.produto import Produto
@@ -85,6 +86,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     app.logger.debug("Registrando as blueprints")
     app.register_blueprint(src.routes.auth.bp)
     app.register_blueprint(src.routes.categoria.bp)
+    app.register_blueprint(src.routes.produto.bp)
 
     with app.app_context():
         # Se estivéssemos usando um SGBD, poderíamos consultar os metadados
@@ -129,7 +131,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             app.logger.info(f"Adicionando usuário inicial ({email}:{senha})")
             usuario = User()
             usuario.nome = "Administrador"
-            usuario.email = validate_email(email).normalized
+            usuario.email = validate_email(email, check_deliverability = False).normalized
             usuario.set_password(senha)
             usuario.email_validado = True
             usuario.usa_2fa = False

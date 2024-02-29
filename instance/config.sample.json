@@ -19,5 +19,8 @@
   "MAIL_PASSWORD": "XXXXX",
   "MAIL_DEFAULT_SENDER": "xxxxx",
   "MAIL_USE_LOCALTIME": true,
-  "MAIL_BACKEND": "console"
+  "MAIL_BACKEND": "console",
+
+  "MAX_PER_PAGE": 200,
+  "MAX_CONTENT_LENGTH": 2097152
 }

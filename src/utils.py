@@ -1,5 +1,5 @@
 import uuid
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from datetime import date
 from io import BytesIO
 
@@ -81,3 +81,15 @@ def get_b64encoded_qr_image(data):
     buffered = BytesIO()
     img.save(buffered)
     return b64encode(buffered.getvalue()).decode("utf-8")
+
+
+def b64encode_image(data):
+    return b64encode(data).decode("ascii")
+
+def b64decode_image(data):
+    return b64decode(data)
+
+def get_tuples(table: db.Model, database):
+    rset = database.session.execute(database.select(table).order_by(table.nome)).scalars()
+    rtuples = [(str(i.id), i.nome) for i in rset]
+    return rtuples

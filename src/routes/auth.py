@@ -23,7 +23,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        usuario = get_user_by_email(validate_email(form.email.data).normalized)
+        usuario = get_user_by_email(validate_email(form.email.data, check_deliverability = False).normalized)
 
         if usuario is None:
             flash('Email ou senha incorretos', category="warning")
