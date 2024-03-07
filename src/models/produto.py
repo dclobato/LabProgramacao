@@ -1,7 +1,10 @@
+import io
 import uuid
+from base64 import b64decode
 from typing import Optional
 
 import sqlalchemy as sa
+from PIL import Image
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid, String, DECIMAL, Integer, Boolean, Text
 
@@ -24,3 +27,35 @@ class Produto(db.Model, TimestampMixin):
 
     categoria = sa.orm.relationship("Categoria",
                                     back_populates="lista_de_produtos")
+
+    def thumbnail(self, max_size: int = 64) -> (bytes, str):
+        saida = io.BytesIO()
+        max_size = min(max_size, 128)
+        if not self.foto_base64 or not self.possui_foto or not self.foto_mime:
+            entrada = Image.new("RGB", (max_size, max_size), (128, 128, 128))
+            formato = "PNG"
+            mime_type = "image/png"
+        else:
+            entrada = Image.open(io.BytesIO(b64decode(self.foto_base64)))
+            formato = entrada.format
+            (largura, altura) = entrada.size
+            fator_escala = max(max_size / largura, max_size / altura)
+            novo_tamanho = (int(largura * fator_escala), int(altura * fator_escala))
+            entrada.thumbnail(novo_tamanho)
+            mime_type = self.foto_mime
+        entrada.save(saida, format=formato)
+        return saida.getvalue(), mime_type
+
+    @property
+    def imagem(self) -> (bytes, str):
+        if not self.foto_base64 or not self.possui_foto or not self.foto_mime:
+            saida = io.BytesIO()
+            entrada = Image.new("RGB", (480, 480), (128, 128, 128))
+            formato = "PNG"
+            entrada.save(saida, format=formato)
+            data = saida.getvalue()
+            mime_type = "image/png"
+        else:
+            data = b64decode(self.foto_base64)
+            mime_type = self.foto_mime
+        return data, mime_type

@@ -6,7 +6,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from email_validator import validate_email
+import email_validator
 from flask import Flask, render_template
 from flask_migrate import init, upgrade, revision
 from sqlalchemy import select
@@ -18,7 +18,7 @@ from src.models.auth import User
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.utils import as_localtime
+from src.utils import as_localtime, normalized_email
 
 
 def create_app(config_filename: str = "config.dev.json") -> Flask:
@@ -68,6 +68,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     login.login_message = "É necessário estar logado para acessar esta funcionalidade"
     login.login_message_category = "warning"
     login.session_protection = "strong"
+    email_validator.CHECK_DELIVERABILITY = False
 
     # Formatando as datas para horário local
     # https://stackoverflow.com/q/65359968
@@ -81,7 +82,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             return None
         else:
             # noinspection PyTestUnpassedFixture
-            return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
+            return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar_one_or_none()
 
     app.logger.debug("Registrando as blueprints")
     app.register_blueprint(src.routes.auth.bp)
@@ -131,7 +132,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             app.logger.info(f"Adicionando usuário inicial ({email}:{senha})")
             usuario = User()
             usuario.nome = "Administrador"
-            usuario.email = validate_email(email, check_deliverability = False).normalized
+            usuario.email = normalized_email(email)
             usuario.set_password(senha)
             usuario.email_validado = True
             usuario.usa_2fa = False

@@ -1,8 +1,9 @@
 import uuid
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from datetime import date
 from io import BytesIO
 
+import email_validator
 from flask import render_template, current_app
 from flask_mailman import EmailMessage
 from qrcode.main import QRCode
@@ -17,16 +18,17 @@ def get_user_by_id(user_id) -> User | None:
     except ValueError:
         return None
     else:
-        return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar()
+        return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar_one_or_none()
 
 
 def get_user_by_email(user_email) -> User | None:
-    return db.session.execute(db.select(User).where(User.email == user_email).limit(1)).scalar()
+    user_email = normalized_email(user_email)
+    return db.session.execute(db.select(User).where(User.email == user_email).limit(1)).scalar_one_or_none()
 
 
 def enviar_email_reset_senha(user_id: uuid.UUID) -> bool:
     usuario = get_user_by_id(user_id)
-    if usuario is None:
+    if not usuario:
         return False
 
     msg = EmailMessage()
@@ -42,7 +44,7 @@ def enviar_email_reset_senha(user_id: uuid.UUID) -> bool:
 
 def enviar_email_novo_usuario(user_id: uuid.UUID) -> bool:
     usuario = get_user_by_id(user_id)
-    if usuario is None:
+    if not usuario:
         return False
 
     msg = EmailMessage()
@@ -73,7 +75,7 @@ def as_localtime(value) -> str | date:
         return value
 
 
-def get_b64encoded_qr_image(data):
+def get_b64encoded_qr_image(data) -> str:
     qr = QRCode(version=1, box_size=10, border=5)
     qr.add_data(data)
     qr.make(fit=True)
@@ -83,13 +85,15 @@ def get_b64encoded_qr_image(data):
     return b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def b64encode_image(data):
+def b64encode_image(data) -> str:
     return b64encode(data).decode("ascii")
 
-def b64decode_image(data):
-    return b64decode(data)
 
 def get_tuples(table: db.Model, database):
     rset = database.session.execute(database.select(table).order_by(table.nome)).scalars()
     rtuples = [(str(i.id), i.nome) for i in rset]
     return rtuples
+
+
+def normalized_email(email: str, check_deliverability: bool = False) -> str:
+    return email_validator.validate_email(email, check_deliverability = check_deliverability).normalized

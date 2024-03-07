@@ -72,12 +72,11 @@ class RegistrationForm(FlaskForm, ValidaSenha):
 
     def validate_email(self, email):
         user = get_user_by_email(email.data)
-        if user is not None:
+        if user:
             raise ValidationError('Este email já está cadastrado')
 
 
 class ProfileForm(FlaskForm):
-    # email = StringField("Email", validators=[ReadOnly()])
     nome = StringField('Nome',
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
     usa_2fa = BooleanField("Ativar autenticação em dois fatores")
