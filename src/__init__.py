@@ -14,11 +14,11 @@ from sqlalchemy import select
 import src.routes.auth
 import src.routes.categoria
 import src.routes.produto
-from src.models.auth import User
+from src.models.auth import User, Role
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.utils import as_localtime, normalized_email
+from src.utils import as_localtime, normalized_email, get_role_by_name
 
 
 def create_app(config_filename: str = "config.dev.json") -> Flask:
@@ -126,6 +126,15 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                     db.session.commit()
                 app.logger.info("Semeadura das tabelas concluída")
 
+        if db.session.execute(select(Role.id).limit(1)).scalar_one_or_none() is None:
+            papeis = ["Admin", "Usuario"]
+            for nome_papel in papeis:
+                papel = Role()
+                papel.nome = nome_papel
+                db.session.add(papel)
+                app.logger.info(f"Adicionando papel '{nome_papel}'")
+            db.session.commit()
+
         if db.session.execute(select(User.id).limit(1)).scalar_one_or_none() is None:
             email = "admin@admin.com.br"
             senha = "123"
@@ -136,6 +145,12 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             usuario.set_password(senha)
             usuario.email_validado = True
             usuario.usa_2fa = False
+            papeis = ["Admin", "Usuario"]
+            for nome_papel in papeis:
+                papel = get_role_by_name(nome_papel)
+                if not papel:
+                    raise ValueError(f"Papel '{nome_papel}' inexistente")
+                usuario.lista_de_papeis.append(papel)
             app.logger.info(f"Ususario '{usuario.email}', senha '123'")
             db.session.add(usuario)
             db.session.commit()

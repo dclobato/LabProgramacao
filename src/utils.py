@@ -8,7 +8,9 @@ from flask import render_template, current_app
 from flask_mailman import EmailMessage
 from qrcode.main import QRCode
 
-from src.models.auth import User
+from sqlalchemy import func
+
+from src.models.auth import User, Role
 from src.modules import db
 
 
@@ -19,6 +21,12 @@ def get_user_by_id(user_id) -> User | None:
         return None
     else:
         return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar_one_or_none()
+
+
+def get_role_by_name(role_name: str = None) -> Role | None:
+    if not role_name:
+        return None
+    return db.session.execute(db.select(Role).where(func.lower(Role.nome) == role_name.lower()).limit(1)).scalar_one_or_none()
 
 
 def get_user_by_email(user_email) -> User | None:

@@ -2,7 +2,7 @@ import random
 import uuid
 from hashlib import md5
 from time import time
-from typing import Optional
+from typing import Optional, List
 
 import jwt
 import jwt.exceptions
@@ -16,6 +16,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from src.models import TimestampMixin
 from src.modules import db
+
+users_roles = sa.Table("usersroles",
+                       db.Model.metadata,
+                       sa.Column("usuario_id", Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"), primary_key=True),
+                       sa.Column("role_id", Uuid(as_uuid=True), sa.ForeignKey("roles.id"), primary_key=True))
 
 
 class User(db.Model, TimestampMixin, UserMixin):
@@ -35,6 +40,9 @@ class User(db.Model, TimestampMixin, UserMixin):
                                            back_populates="usuario",
                                            lazy="selectin",
                                            cascade="all, delete-orphan")
+
+    lista_de_papeis: Mapped[List["Role"]] = sa.orm.relationship(secondary=users_roles,
+                                                                  back_populates="usuarios_no_papel")
 
     @property
     def get_totp_uri(self) -> str:
@@ -113,3 +121,13 @@ class Backup2FA(db.Model):
     usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
 
     usuario = sa.orm.relationship("User", back_populates="lista_2fa_backup")
+
+
+class Role(db.Model):
+    __tablename__ = "roles"
+
+    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nome: Mapped[str] = mapped_column(String(60), nullable=False)
+
+    usuarios_no_papel: Mapped[List["User"]] = sa.orm.relationship(secondary=users_roles,
+                                                                  back_populates="lista_de_papeis")
