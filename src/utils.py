@@ -1,69 +1,9 @@
-import uuid
 from base64 import b64encode
 from datetime import date
 from io import BytesIO
 
 import email_validator
-from flask import render_template, current_app
-from flask_mailman import EmailMessage
 from qrcode.main import QRCode
-
-from sqlalchemy import func
-
-from src.models.auth import User, Role
-from src.modules import db
-
-
-def get_user_by_id(user_id) -> User | None:
-    try:
-        auth_id = uuid.UUID(str(user_id))
-    except ValueError:
-        return None
-    else:
-        return db.session.execute(db.select(User).where(User.id == auth_id).limit(1)).scalar_one_or_none()
-
-
-def get_role_by_name(role_name: str = None) -> Role | None:
-    if not role_name:
-        return None
-    return db.session.execute(db.select(Role).where(func.lower(Role.nome) == role_name.lower()).limit(1)).scalar_one_or_none()
-
-
-def get_user_by_email(user_email) -> User | None:
-    user_email = normalized_email(user_email)
-    return db.session.execute(db.select(User).where(User.email == user_email).limit(1)).scalar_one_or_none()
-
-
-def enviar_email_reset_senha(user_id: uuid.UUID) -> bool:
-    usuario = get_user_by_id(user_id)
-    if not usuario:
-        return False
-
-    msg = EmailMessage()
-    msg.to = [usuario.email]
-    msg.subject = "[App2024] Mude a sua senha"
-    msg.body = render_template("auth/email/password-reset-email.jinja",
-                               user=usuario,
-                               token=usuario.create_jwt_token("reset_password"),
-                               host=current_app.config.get("APP_BASE_URL", "http://127.0.0.1:5000"))
-    msg.send(fail_silently=True)
-    return True
-
-
-def enviar_email_novo_usuario(user_id: uuid.UUID) -> bool:
-    usuario = get_user_by_id(user_id)
-    if not usuario:
-        return False
-
-    msg = EmailMessage()
-    msg.to = [usuario.email]
-    msg.subject = "[App2024] Ative a sua conta"
-    msg.body = render_template("auth/email/confirmation-email.jinja",
-                               user=usuario,
-                               token=usuario.create_jwt_token("validate_email"),
-                               host=current_app.config.get("APP_BASE_URL", "http://127.0.0.1:5000"))
-    msg.send(fail_silently=True)
-    return True
 
 
 # Formatando as datas para horário local
@@ -71,7 +11,7 @@ def enviar_email_novo_usuario(user_id: uuid.UUID) -> bool:
 def as_localtime(value) -> str | date:
     import pytz
     from flask import current_app
-    tz = current_app.config.get("TIMEZONE", "America/Sao_Paulo")
+    tz = current_app.config.get("TIMEZONE")
     try:
         formato = "%Y-%m-%d, %H:%M"
         utc = pytz.timezone('UTC')
@@ -97,11 +37,9 @@ def b64encode_image(data) -> str:
     return b64encode(data).decode("ascii")
 
 
-def get_tuples(table: db.Model, database):
-    rset = database.session.execute(database.select(table).order_by(table.nome)).scalars()
-    rtuples = [(str(i.id), i.nome) for i in rset]
-    return rtuples
-
-
 def normalized_email(email: str, check_deliverability: bool = False) -> str:
-    return email_validator.validate_email(email, check_deliverability = check_deliverability).normalized
+    return email_validator.validate_email(email, check_deliverability=check_deliverability).normalized
+
+
+def split_by(texto: str, size: int = 4, separador: str = ' '):
+    return separador.join(texto[i:i + size] for i in range(0, len(texto), size))

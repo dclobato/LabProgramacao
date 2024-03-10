@@ -1,23 +1,32 @@
-from flask import Blueprint, render_template, flash, redirect, url_for, request, Response
+from flask import Blueprint, render_template, flash, redirect, url_for, request, Response, abort, current_app
 from flask_login import login_required
 
+from src.role_management import papeis_aceitos
 from src.forms.produto import NovoProdutoForm
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import db
-from src.utils import get_tuples, b64encode_image
+from src.utils import b64encode_image
 
-bp = Blueprint("produto", __name__, url_prefix="/produto")
+bp = Blueprint("produto", __name__, url_prefix="/admin/produto")
 
 
 @bp.route("/novo", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def novo():
+    if Categoria.is_empty():
+        flash("Não há categorias cadastradas. Impossível cadastrar um produto", category="error")
+        return redirect(url_for("index"))
+
     form = NovoProdutoForm()
-    form.categoria.choices = get_tuples(Categoria, db)
+    form.categoria.choices = Categoria.get_tuples_id_atributo()
+    if not form.categoria.choices:
+        current_app.logger.fatal(f"Problema na criação das tuplas de categoria")
+        abort(500)
 
     if form.validate_on_submit():
-        categoria = db.session.get(Categoria, form.categoria.data)
+        categoria = Categoria.get_by_id(form.categoria.data)
         if categoria is None:
             flash("Categoria inválida", category='info')
             return redirect(url_for("index"))
@@ -47,7 +56,7 @@ def novo():
 @bp.route("/<uuid:id_produto>/imagem", methods=["GET"])
 @login_required
 def imagem(id_produto):
-    produto = db.session.get(Produto, id_produto)
+    produto = Produto.get_by_id(id_produto)
     if produto is None:
         return Response(status=404)
     imagem_content, imagem_type = produto.imagem
@@ -58,7 +67,7 @@ def imagem(id_produto):
 @bp.route("/<uuid:id_produto>/thumbnail/<int:max_size>", methods=["GET"])
 @login_required
 def thumbnail(id_produto, max_size: int = 64):
-    produto = db.session.get(Produto, id_produto)
+    produto = Produto.get_by_id(id_produto)
     if produto is None:
         return Response(status=404)
     imagem_content, imagem_type = produto.thumbnail(max_size=max_size)

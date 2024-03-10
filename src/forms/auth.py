@@ -4,8 +4,6 @@ from flask_wtf import FlaskForm
 from wtforms.fields.simple import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import Email, InputRequired, EqualTo, ValidationError, Length
 
-from src.utils import get_user_by_email
-
 
 # noinspection PyMethodMayBeStatic
 class ValidaSenha:
@@ -71,7 +69,8 @@ class RegistrationForm(FlaskForm, ValidaSenha):
     submit = SubmitField('Adicionar usuário')
 
     def validate_email(self, email):
-        user = get_user_by_email(email.data)
+        from src.models.auth import User
+        user = User.get_by_email(email.data)
         if user:
             raise ValidationError('Este email já está cadastrado')
 
@@ -83,8 +82,13 @@ class ProfileForm(FlaskForm):
     submit = SubmitField("Efetuar mudanças")
 
 
+# noinspection PyPep8
 class Read2FACodeForm(FlaskForm):
+    # https://web.dev/articles/sms-otp-form
     codigo = StringField("Código",
                          validators=[InputRequired(message="Informe o código fornecido pelo aplicativo autenticador"),
-                                     Length(min=6, max=6)])
+                                     Length(min=6, max=6)],
+                         render_kw={"inputmode": "numeric",
+                                    "autocomplete": "one-time-code",
+                                    "pattern": r"\d{6}"})
     submit = SubmitField("Enviar código")

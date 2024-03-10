@@ -5,10 +5,11 @@ from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy.types import Uuid, String
 
 from src.models import TimestampMixin
+from src.models.operationsmixin import OperationsMixin
 from src.modules import db
 
 
-class Categoria(db.Model, TimestampMixin):
+class Categoria(db.Model, TimestampMixin, OperationsMixin):
     __tablename__ = "categorias"
 
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)

@@ -2,14 +2,16 @@ import werkzeug.exceptions
 from flask import Blueprint, render_template, request, current_app, flash, redirect, url_for
 from flask_login import login_required
 
+from src.role_management import papeis_aceitos
 from src.forms.categoria import NovoCategoriaForm, EditCategoriaForm
 from src.models.categoria import Categoria
 from src.modules import db
 
-bp = Blueprint("categoria", __name__, url_prefix="/categoria")
+bp = Blueprint("categoria", __name__, url_prefix="/admin/categoria")
 
 
 @bp.route("/", methods=["GET"])
+@login_required
 def lista():
     # noinspection PyPep8Naming
     MAXPERPAGE = int(current_app.config.get("MAX_PER_PAGE", 500))
@@ -49,6 +51,7 @@ def lista():
 
 @bp.route("/novo", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def novo():
     form = NovoCategoriaForm()
     if form.validate_on_submit():
@@ -58,15 +61,16 @@ def novo():
         db.session.commit()
         flash(message=f"Categoria '{form.nome.data}' adicionada", category="success")
         return redirect(url_for('categoria.lista'))
-    return render_template("render_simple_form.jinja",
+    return render_template("render_simple_slim_form.jinja",
                            title="Nova categoria",
                            form=form)
 
 
 @bp.route("/edit/<uuid:id_categoria>", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def edit(id_categoria):
-    categoria = db.session.get(Categoria, id_categoria)
+    categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
         flash("Categoria inexistente!", category='danger')
         return redirect(url_for('categoria.lista'))
@@ -83,8 +87,10 @@ def edit(id_categoria):
 
 @bp.route("/remove/<uuid:id_categoria>", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def remove(id_categoria):
-    categoria = db.session.get(Categoria, id_categoria)
+    # categoria = get_by_id(Categoria, id_categoria)
+    categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
         flash("Categoria inexistente!", category='danger')
         return redirect(url_for('categoria.lista'))

@@ -22,5 +22,9 @@
   "MAIL_BACKEND": "console",
 
   "MAX_PER_PAGE": 200,
-  "MAX_CONTENT_LENGTH": 2097152
+  "MAX_CONTENT_LENGTH": 2097152,
+
+  "DEFAULT_ADMIN_EMAIL": "admin@admin.com.br",
+  "DEFAULT_USER_EMAIL": "user@user.com.br"
+
 }

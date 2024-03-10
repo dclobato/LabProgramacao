@@ -9,10 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid, String, DECIMAL, Integer, Boolean, Text
 
 from src.models import TimestampMixin
+from src.models.operationsmixin import OperationsMixin
 from src.modules import db
 
 
-class Produto(db.Model, TimestampMixin):
+class Produto(db.Model, TimestampMixin, OperationsMixin):
     __tablename__ = "produtos"
 
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)

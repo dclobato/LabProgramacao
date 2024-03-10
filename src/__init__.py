@@ -9,7 +9,6 @@ from pathlib import Path
 import email_validator
 from flask import Flask, render_template
 from flask_migrate import init, upgrade, revision
-from sqlalchemy import select
 
 import src.routes.auth
 import src.routes.categoria
@@ -18,7 +17,7 @@ from src.models.auth import User, Role
 from src.models.categoria import Categoria
 from src.models.produto import Produto
 from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.utils import as_localtime, normalized_email, get_role_by_name
+from src.utils import as_localtime, normalized_email
 
 
 def create_app(config_filename: str = "config.dev.json") -> Flask:
@@ -30,6 +29,10 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     # Desativar as mensagens do servidor HTTP
     # https://stackoverflow.com/a/18379764
     # logging.getLogger('werkzeug').setLevel(logging.ERROR)
+
+    # Quando em produção, fazer os ajustes para garantir que REMOTE_ADDR está correto
+    # https://werkzeug.palletsprojects.com/en/3.0.x/middleware/proxy_fix/
+    # https://werkzeug.palletsprojects.com/en/3.0.x/deployment/proxy_fix/
 
     if not Path(app.instance_path).is_dir():
         try:
@@ -48,19 +51,29 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         app.logger.fatal(f"Exception: {e}")
         exit(1)
 
-    if app.config.get("SECRET_KEY", None) is None:
-        app.logger.fatal(f"Necessário definir a SECRET_KEY da aplicação no arquivo {config_filename}")
-        exit(1)
+    mandatory_keys = ["SQLALCHEMY_DATABASE_URI",
+                      "MIGRATION_DIR",
+                      "TIMEZONE",
+                      "SECRET_KEY",
+                      "APP_BASE_URL",
+                      "APP_NAME"]
+    for key in mandatory_keys:
+        if app.config.get(key, None) is None:
+            app.logger.fatal(f"Necessário definir a chave '{key}' no arquivo {config_filename}")
+            exit(1)
 
     app.logger.debug("Inicializando módulos básicos")
     bootstrap.init_app(app)
-    if app.config.get("MINIFY", True):
-        minify.init_app(app)
+    if "MINIFY" in app.config:
+        app.logger.debug("Verificando se vai minificar saida")
+        if app.config.get("MINIFY"):
+            app.logger.debug("Sim, vai")
+            minify.init_app(app)
     db.init_app(app)
     migration.init_app(app,
                        db,
-                       directory=app.config.get("MIGRATION_DIR", "src/migrations"),
-                       render_as_batch=False)
+                       directory=app.config.get("MIGRATION_DIR"),
+                       render_as_batch=True)
     csrf.init_app(app)
     mail.init_app(app)
     login.init_app(app)
@@ -108,54 +121,43 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                      head="head")
             upgrade(revision="head")
 
-            if db.session.execute(select(Categoria.id).limit(1)).scalar_one_or_none() is None:
-                from src.models.seed import seed_data
-                app.logger.info("Semeando as tabelas")
-                for seed in seed_data:
-                    categoria = Categoria()
-                    categoria.nome = seed["categoria"]
-                    db.session.add(categoria)
-                    for p in seed["produtos"]:
-                        produto = Produto()
-                        produto.nome = p["nome"]
-                        produto.preco = p["preco"]
-                        produto.estoque = random.randrange(-5, 60)
-                        produto.ativo = random.random() < 0.8
-                        produto.categoria = categoria
-                        db.session.add(produto)
-                    db.session.commit()
-                app.logger.info("Semeadura das tabelas concluída")
-
-        if db.session.execute(select(Role.id).limit(1)).scalar_one_or_none() is None:
+        if Role.is_empty():
             papeis = ["Admin", "Usuario"]
             for nome_papel in papeis:
-                papel = Role()
-                papel.nome = nome_papel
-                db.session.add(papel)
+                db.session.add(Role(nome_papel))
                 app.logger.info(f"Adicionando papel '{nome_papel}'")
             db.session.commit()
 
-        if db.session.execute(select(User.id).limit(1)).scalar_one_or_none() is None:
-            email = "admin@admin.com.br"
-            senha = "123"
-            app.logger.info(f"Adicionando usuário inicial ({email}:{senha})")
-            usuario = User()
-            usuario.nome = "Administrador"
-            usuario.email = normalized_email(email)
-            usuario.set_password(senha)
-            usuario.email_validado = True
-            usuario.usa_2fa = False
-            papeis = ["Admin", "Usuario"]
-            for nome_papel in papeis:
-                papel = get_role_by_name(nome_papel)
-                if not papel:
-                    raise ValueError(f"Papel '{nome_papel}' inexistente")
-                usuario.lista_de_papeis.append(papel)
-            app.logger.info(f"Ususario '{usuario.email}', senha '123'")
-            db.session.add(usuario)
-            db.session.commit()
+        if User.is_empty():
+            usuarios = [
+                {"nome": "Administrador",
+                 "email": app.config.get("DEFAULT_ADMIN_EMAIL", "admin@admin.com.br"),
+                 "senha": "123",
+                 "papeis": ["Admin", "Usuario"],
+                 },
+                {"nome": "Usuario",
+                 "email": app.config.get("DEFAULT_USER_EMAIL", "user@user.com.br"),
+                 "senha": "123",
+                 "papeis": ["Usuario"],
+                 },
+            ]
+            for usuario in usuarios:
+                app.logger.info(f"Adicionando usuário ({usuario.get('email')}:{usuario.get('senha')})")
+                novo_usuario = User()
+                novo_usuario.nome = usuario.get("nome")
+                novo_usuario.email = normalized_email(usuario.get('email'))
+                novo_usuario.set_password(usuario.get('senha'))
+                novo_usuario.email_validado = True
+                novo_usuario.usa_2fa = False
+                for nome_papel in usuario.get("papeis"):
+                    papel = Role.get_first_or_none_by("nome", nome_papel, casesensitive=False)
+                    if not papel:
+                        raise ValueError(f"Papel '{nome_papel}' inexistente")
+                    novo_usuario.pertence_aos_papeis.append(papel)
+                db.session.add(novo_usuario)
+                db.session.commit()
 
-        if db.session.execute(select(Categoria.id).limit(1)).scalar_one_or_none() is None:
+        if Categoria.is_empty():
             from src.models.seed import seed_data
             app.logger.info("Semeando as tabelas")
             cc = pc = 0

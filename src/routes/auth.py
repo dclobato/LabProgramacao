@@ -8,12 +8,11 @@ from flask_login import current_user, login_user, login_required, logout_user
 
 from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm, ProfileForm, \
     Read2FACodeForm
-from src.models.auth import User
+from src.models.auth import User, Role
 from src.modules import db
-from src.utils import get_user_by_email, enviar_email_reset_senha, enviar_email_novo_usuario, get_b64encoded_qr_image, \
-    get_user_by_id, normalized_email
+from src.utils import get_b64encoded_qr_image, normalized_email, split_by
 
-bp = Blueprint("auth", __name__, url_prefix="/auth")
+bp = Blueprint("auth", __name__, url_prefix="/admin/auth")
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -22,7 +21,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        usuario = get_user_by_email(form.email.data)
+        usuario = User.get_by_email(form.email.data)
 
         if usuario is None:
             flash('Email ou senha incorretos', category="warning")
@@ -40,7 +39,7 @@ def login():
                                     remember_me=bool(form.remember_me.data),
                                     next=request.args.get('next')))
         login_user(usuario, remember=form.remember_me.data)
-        current_user.dta_ultimo_acesso = datetime.datetime.now(tz=pytz.timezone('UTC'))
+        usuario.update_login_details(request.remote_addr)
         db.session.commit()
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
@@ -48,6 +47,7 @@ def login():
         flash(f'Usuario {usuario.email} logado', category="success")
         return redirect(next_page)
 
+    # https://github.com/nauvalazhar/bootstrap-5-login-page/
     return render_template('auth/login.jinja',
                            title='Dados de acesso',
                            form=form)
@@ -76,7 +76,7 @@ def reset_password(token):
             db.session.commit()
             flash('Sua senha foi redefinida!', category="success")
             return redirect(url_for('auth.login'))
-        return render_template('render_simple_form.jinja',
+        return render_template('render_simple_slim_form.jinja',
                                title="Escolha uma nova senha",
                                form=form)
     else:
@@ -86,25 +86,28 @@ def reset_password(token):
 
 @bp.route('/new_password/', methods=['GET', 'POST'])
 def new_password():
-
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = AskToResetPassword()
     if form.validate_on_submit():
         email = normalized_email(form.email.data)
-        usuario = get_user_by_email(email)
+        usuario = User.get_by_email(email)
         flash(
             f"Se houver uma conta com o email {email}, uma mensagems será enviada "
             f"com as instruções para redefinir a senha",
             category="success")
         if usuario:
-            if not enviar_email_reset_senha(usuario.id):
+            body = render_template("auth/email/password-reset-email.jinja",
+                                   user=usuario,
+                                   token=usuario.create_jwt_token("reset_password"),
+                                   host=current_app.config.get("APP_BASE_URL"))
+            if not usuario.send_email(subject="Mude a sua senha", body=body):
                 current_app.logger.warning(f"Email de reset de senha para o usuario {str(usuario.id)} não enviado")
             return redirect(url_for('auth.login'))
         else:
             current_app.logger.info(
                 f"Pedido de reset de senha para usuario inexistente ({email})")
-    return render_template('render_simple_form.jinja',
+    return render_template('render_simple_slim_form.jinja',
                            title='Esqueci minha senha',
                            form=form)
 
@@ -121,14 +124,20 @@ def register():
         usuario.set_password(form.password.data)
         usuario.email_validado = False
         usuario.usa_2fa = False
+        usuario.pertence_aos_papeis.append(Role.get_first_or_none_by("nome",
+                                                                     "Usuario",
+                                                                     casesensitive=False))
         db.session.add(usuario)
         db.session.flush()
         db.session.refresh(usuario)
-        user_id = usuario.id
+        body = render_template("auth/email/confirmation-email.jinja",
+                               user=usuario,
+                               token=usuario.create_jwt_token("validate_email"),
+                               host=current_app.config.get("APP_BASE_URL"))
+        if not usuario.send_email(subject="Ative a sua conta", body=body):
+            current_app.logger.warning(f"Email de ativação para para o usuario {str(usuario.id)} não enviado")
         db.session.commit()
         flash('Cadastro efetuado com sucesso. Confirme seu email antes de logar no sistema', category="success")
-        if not enviar_email_novo_usuario(user_id):
-            current_app.logger.warning(f"Email de ativação para para o usuario {str(user_id)} não enviado")
         return redirect(url_for('auth.login'))
     return render_template('render_simple_form.jinja',
                            title='Cadastro de usuário',
@@ -210,7 +219,7 @@ def enable_2fa():
                            title="Ativação da autenticação em dois fatores",
                            form=form,
                            imagem=imagem,
-                           token=current_user.otp_secret)
+                           token=split_by(current_user.otp_secret))
 
 
 @bp.route('/get2fa/<uuid:user_id>', methods=['GET', 'POST'])
@@ -222,14 +231,17 @@ def get2fa(user_id):
 
     form = Read2FACodeForm()
     if form.validate_on_submit():
-        usuario = get_user_by_id(user_id)
+        usuario = User.get_by_id(user_id)
         if usuario is None:
             return redirect(url_for('auth.login'))
         token = str(form.codigo.data)
         if usuario.usa_2fa:
-            if usuario.verify_totp(token=token) or usuario.verify_totp_backup(token=token):
+            if usuario.ultimo_otp.lower() == token.lower():
+                flash("Aguarde o próximo código e tente novamente", category="warning")
+            elif usuario.verify_totp(token=token) or usuario.verify_totp_backup(token=token):
                 login_user(usuario, remember=bool(remember_me))
-                current_user.dta_ultimo_acesso = datetime.datetime.now(tz=pytz.timezone('UTC'))
+                usuario.update_login_details(request.remote_addr)
+                usuario.ultimo_otp = token
                 db.session.commit()
                 if not next_page or urlsplit(next_page).netloc != '':
                     next_page = url_for('index')
@@ -237,6 +249,6 @@ def get2fa(user_id):
                 return redirect(next_page)
             else:
                 flash("Código incorreto", category="warning")
-    return render_template('render_simple_form.jinja',
+    return render_template('render_simple_slim_form.jinja',
                            title='Autenticação em dois fatores',
                            form=form)
