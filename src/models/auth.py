@@ -1,4 +1,3 @@
-import datetime
 import random
 import uuid
 from hashlib import md5
@@ -8,7 +7,6 @@ from typing import Optional, List, Self
 import jwt
 import jwt.exceptions
 import pyotp
-import pytz
 import sqlalchemy as sa
 from flask import current_app
 from flask_login import UserMixin
@@ -58,6 +56,16 @@ class User(db.Model, TimestampMixin, UserMixin, OperationsMixin):
     pertence_aos_papeis: Mapped[List["Role"]] = sa.orm.relationship(secondary=users_roles,
                                                                     back_populates="usuarios_no_papel",
                                                                     cascade="all, delete")
+
+    lista_de_enderecos = sa.orm.relationship("Endereco",
+                                             back_populates="usuario",
+                                             lazy="select",
+                                             cascade="all, delete-orphan")
+
+    lista_de_pedidos = sa.orm.relationship("Pedido",
+                                           back_populates="usuario",
+                                           lazy="select",
+                                           cascade="all, delete-orphan")
 
     @property
     def nomes_dos_papeis(self) -> list[str] | None:
@@ -152,20 +160,6 @@ class User(db.Model, TimestampMixin, UserMixin, OperationsMixin):
             return False
         else:
             return True
-
-    # noinspection PyTypeChecker
-    def update_login_details(self,
-                             ip: str,
-                             timestamp: datetime = datetime.datetime.now(tz=pytz.timezone('UTC'))):
-        remote_addr = ip or None
-
-        login_anterior, login_atual = self.dta_acesso_atual, timestamp
-        ip_anterior, ip_atual = self.ip_acesso_atual, remote_addr
-
-        self.dta_ultimo_acesso = login_anterior or login_atual
-        self.dta_acesso_atual = login_atual
-        self.ip_ultimo_acesso = ip_anterior
-        self.ip_acesso_atual = ip_atual
 
     # Based on Flask-user/flask_user/user_mixin.py#L59
     def tem_papeis(self, *papeis_necessarios):

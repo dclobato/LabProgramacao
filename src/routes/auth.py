@@ -39,7 +39,6 @@ def login():
                                     remember_me=bool(form.remember_me.data),
                                     next=request.args.get('next')))
         login_user(usuario, remember=form.remember_me.data)
-        usuario.update_login_details(request.remote_addr)
         db.session.commit()
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
@@ -240,7 +239,6 @@ def get2fa(user_id):
                 flash("Aguarde o próximo código e tente novamente", category="warning")
             elif usuario.verify_totp(token=token) or usuario.verify_totp_backup(token=token):
                 login_user(usuario, remember=bool(remember_me))
-                usuario.update_login_details(request.remote_addr)
                 usuario.ultimo_otp = token
                 db.session.commit()
                 if not next_page or urlsplit(next_page).netloc != '':

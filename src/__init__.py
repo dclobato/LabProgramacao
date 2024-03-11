@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -7,7 +8,9 @@ import uuid
 from pathlib import Path
 
 import email_validator
-from flask import Flask, render_template
+import pytz
+from flask import Flask, render_template, request
+from flask_login import user_logged_in
 from flask_migrate import init, upgrade, revision
 
 import src.routes.auth
@@ -183,5 +186,18 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     @app.route("/index")
     def index():
         return render_template("index.jinja", title="Página inicial")
+
+    @user_logged_in.connect_via(app)
+    def update_login_details(sender_app, user):
+        remote_addr = request.remote_addr or None
+        timestamp = datetime.datetime.now(tz=pytz.timezone('UTC'))
+
+        login_anterior, login_atual = user.dta_acesso_atual, timestamp
+        ip_anterior, ip_atual = user.ip_acesso_atual, remote_addr
+
+        user.dta_ultimo_acesso = login_anterior or login_atual
+        user.dta_acesso_atual = login_atual
+        user.ip_ultimo_acesso = ip_anterior
+        user.ip_acesso_atual = ip_atual
 
     return app

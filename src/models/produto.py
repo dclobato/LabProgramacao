@@ -1,7 +1,7 @@
 import io
 import uuid
 from base64 import b64decode
-from typing import Optional
+from typing import Optional, List
 
 import sqlalchemy as sa
 from PIL import Image
@@ -28,6 +28,11 @@ class Produto(db.Model, TimestampMixin, OperationsMixin):
 
     categoria = sa.orm.relationship("Categoria",
                                     back_populates="lista_de_produtos")
+
+    lista_de_pedidos: Mapped[List["Pedido"]] = sa.orm.relationship("ItemPedido",
+                                                                   back_populates="produto",
+                                                                   lazy="selectin",
+                                                                   cascade="all, delete-orphan")
 
     def thumbnail(self, max_size: int = 64) -> (bytes, str):
         saida = io.BytesIO()
