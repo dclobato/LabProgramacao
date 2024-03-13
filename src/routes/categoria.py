@@ -11,6 +11,7 @@ bp = Blueprint("categoria", __name__, url_prefix="/admin/categoria")
 
 
 @bp.route("/", methods=["GET"])
+@login_required
 def lista():
     # noinspection PyPep8Naming
     MAXPERPAGE = int(current_app.config.get("MAX_PER_PAGE", 500))

@@ -41,7 +41,7 @@ class AskToResetPassword(FlaskForm):
                         validators=[InputRequired(
                             message="É obrigatório informar o email para o qual se deseja definir nova senha"),
                             Email(message="Informe um email válido", check_deliverability=False)])
-    submit = SubmitField('Enviar pedido para redefinição de senha')
+    submit = SubmitField('Redefinir a senha')
 
 
 class SetNewPasswordForm(FlaskForm, ValidaSenha):

@@ -140,24 +140,28 @@ def valida_email(token):
     return redirect(url_for('index'))
 
 
-@bp.route("/user/", methods=['GET', 'POST'])
+@bp.route("/profile/", methods=['GET', 'POST'])
 @login_required
 def user():
     form = ProfileForm(obj=current_user)
     if form.validate_on_submit():
         current_user.nome = form.nome.data
         if form.usa_2fa.data:
-            current_user.otp_secret = pyotp.random_base32()
-            db.session.commit()
-            flash("Alteração efetuadas. Conclua ativação da autenticação em dois fatores", "success")
-            return redirect(url_for("auth.enable_2fa"))
+            if not current_user.usa_2fa:
+                current_user.otp_secret = pyotp.random_base32()
+                db.session.commit()
+                flash("Alteração efetuadas. Conclua ativação da autenticação em dois fatores", "success")
+                return redirect(url_for("auth.enable_2fa"))
         else:
-            current_user.usa_2fa = False
-            current_user.otp_secret = None
-            if len(current_user.lista_2fa_backup) > 0:
-                for codigo in current_user.lista_2fa_backup:
-                    db.session.delete(codigo)
-                flash("Códigos de autenticação reservas foram removidos", category="info")
+            if current_user.usa_2fa:
+                current_user.usa_2fa = False
+                current_user.otp_secret = None
+                current_user.ultimo_otp = None
+                current_user.dta_ativacao_2fa = None
+                if len(current_user.lista_2fa_backup) > 0:
+                    for codigo in current_user.lista_2fa_backup:
+                        db.session.delete(codigo)
+                    flash("Códigos de autenticação reservas foram removidos", category="info")
         db.session.commit()
         flash(message="Alterações efetuadas", category='success')
         return redirect(url_for("auth.user"))
