@@ -152,6 +152,7 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         msg.to = [self.email]
         msg.subject = f"[{current_app.config.get("APP_NAME")}] {subject}"
         msg.body = body
+        msg.extra_headers["Message-ID"] = f"{str(uuid.uuid4())}@{current_app.config.get('APP_MTA_MESSAGEID')}"
         try:
             msg.send()
         except smtplib.SMTPException:

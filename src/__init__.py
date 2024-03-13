@@ -56,6 +56,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         "SECRET_KEY",
         "APP_BASE_URL",
         "APP_NAME",
+        "APP_MTA_MESSAGEID",
     ]
     for key in mandatory_keys:
         if app.config.get(key, None) is None:
