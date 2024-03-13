@@ -16,6 +16,7 @@ from flask_migrate import init, upgrade, revision
 import src.routes.auth
 import src.routes.categoria
 import src.routes.produto
+import src.routes.backend
 from src.models.auth import User, Role
 from src.models.categoria import Categoria
 from src.models.produto import Produto
@@ -73,6 +74,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             app.logger.debug("Sim, vai")
             minify.init_app(app)
     db.init_app(app)
+    import src.models.relacoes
     migration.init_app(app,
                        db,
                        directory=app.config.get("MIGRATION_DIR"),
@@ -104,6 +106,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     app.register_blueprint(src.routes.auth.bp)
     app.register_blueprint(src.routes.categoria.bp)
     app.register_blueprint(src.routes.produto.bp)
+    app.register_blueprint(src.routes.backend.bp)
 
     with app.app_context():
         # Se estivéssemos usando um SGBD, poderíamos consultar os metadados

@@ -12,21 +12,18 @@ from flask import current_app
 from flask_login import UserMixin
 from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy.types import Uuid, String, DateTime, Boolean, Integer
-# noinspection PyPackageRequirements
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from src.models import TimestampMixin
-from src.models.operationsmixin import OperationsMixin
 from src.modules import db
+from . import TimestampMixin
+from .mixins import OperationsMixin
 
-users_roles = sa.Table("usersroles",
-                       db.Model.metadata,
+# tabelas associativas
+users_roles = sa.Table("usersroles", db.Model.metadata,
                        sa.Column("usuario_id",
-                                 sa.ForeignKey("usuarios.id"),
-                                 primary_key=True),
+                                 sa.ForeignKey("usuarios.id"), primary_key=True),
                        sa.Column("role_id",
-                                 sa.ForeignKey("roles.id"),
-                                 primary_key=True)
+                                 sa.ForeignKey("roles.id"), primary_key=True)
                        )
 
 
@@ -48,24 +45,16 @@ class User(db.Model, TimestampMixin, UserMixin, OperationsMixin):
     otp_secret: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     dta_ativacao_2fa: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
     ultimo_otp: Mapped[Optional[str]] = mapped_column(String(6), nullable=True)
+
     lista_2fa_backup = sa.orm.relationship("Backup2FA",
                                            back_populates="usuario",
                                            lazy="selectin",
                                            cascade="all, delete-orphan")
 
     pertence_aos_papeis: Mapped[List["Role"]] = sa.orm.relationship(secondary=users_roles,
+                                                                    lazy="select",
                                                                     back_populates="usuarios_no_papel",
                                                                     cascade="all, delete")
-
-    lista_de_enderecos = sa.orm.relationship("Endereco",
-                                             back_populates="usuario",
-                                             lazy="select",
-                                             cascade="all, delete-orphan")
-
-    lista_de_pedidos = sa.orm.relationship("Pedido",
-                                           back_populates="usuario",
-                                           lazy="select",
-                                           cascade="all, delete-orphan")
 
     @property
     def nomes_dos_papeis(self) -> list[str] | None:
@@ -196,7 +185,9 @@ class Backup2FA(db.Model):
     hash_codigo: Mapped[str] = mapped_column(String(256), nullable=False)
     usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
 
-    usuario = sa.orm.relationship("User", back_populates="lista_2fa_backup")
+    usuario = sa.orm.relationship("User",
+                                  lazy="select",
+                                  back_populates="lista_2fa_backup")
 
 
 class Role(db.Model, OperationsMixin):
@@ -205,9 +196,10 @@ class Role(db.Model, OperationsMixin):
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome: Mapped[str] = mapped_column(String(60), nullable=False, unique=True, index=True)
 
-    usuarios_no_papel: Mapped[List["User"] | None] = sa.orm.relationship(secondary=users_roles,
-                                                                         back_populates="pertence_aos_papeis",
-                                                                         viewonly=True)
+    usuarios_no_papel: Mapped[List["User"]] = sa.orm.relationship(secondary=users_roles,
+                                                                  lazy="select",
+                                                                  back_populates="pertence_aos_papeis",
+                                                                  viewonly=True)
 
     # noinspection PyTypeChecker
     def __init__(self, _nome: str):

@@ -1,0 +1,39 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col">Destinatário</th>
+                <th scope="col">Endereço</th>
+                <th scope="col" class="text-end">CEP</th>
+                <th scope="col" class="text-center">Ações</th>
+            </tr>
+            <tbody>
+            {% for endereco in rset %}
+                <tr>
+                    <td>{{ endereco.nome }}</td>
+                    <td>{{ endereco.destinatario }}</td>
+                    {% set endereco_completo = endereco.destinatario_logradouro + ", " + endereco.destinatario_numero %}
+                    {% if endereco.destinatario_complemento | length > 0 %}
+                    {% set endereco_completo = endereco_completo + ", " + endereco.destinatario_complemento %}
+                    {% endif %}
+                    {% set endereco_completo = endereco_completo + ", " + endereco.destinatario_bairro + ", " + endereco.destinatario_cidade + ", " + endereco.destinatario_uf %}
+                    <td>{{ endereco_completo }}</td>
+                    <td class="text-end">{{ endereco.destinatario_cep }}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('backend.edita_endereco', id_endereco=endereco.id) }}">
+                                {{ render_icon("pencil-square", title="Alterar") }}</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('backend.remove_endereco', id_endereco=endereco.id) }}">
+                                {{ render_icon("trash", title="Excluir") }}</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

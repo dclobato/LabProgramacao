@@ -1,13 +1,12 @@
 import uuid
-from typing import Optional, List
+from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy.types import Uuid, String, DateTime, Boolean, Integer, DECIMAL
 
-from src.models.operationsmixin import OperationsMixin
-from src.models.produto import Produto
 from src.modules import db
+from .mixins import OperationsMixin
 
 
 class Pedido(db.Model, OperationsMixin):
@@ -24,12 +23,13 @@ class Pedido(db.Model, OperationsMixin):
     usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("usuarios.id"))
     endereco_id: Mapped[Optional[Uuid]] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("enderecos.id"))
 
-    usuario: Mapped["User"] = sa.orm.relationship("User",
-                                                  lazy="select",
-                                                  back_populates="lista_de_pedidos")
-    endereco: Mapped["Endereco"] = sa.orm.relationship("Endereco",
-                                                       lazy="select",
-                                                       back_populates="lista_de_pedidos")
+    usuario = sa.orm.relationship("User",
+                                  lazy="select",
+                                  back_populates="lista_de_pedidos")
+
+    endereco = sa.orm.relationship("Endereco",
+                                   lazy="select",
+                                   back_populates="lista_de_pedidos")
 
     lista_de_produtos = sa.orm.relationship("ItemPedido",
                                             back_populates="pedido",
@@ -53,14 +53,9 @@ class Endereco(db.Model, OperationsMixin):
     destinatario_uf: Mapped[str] = mapped_column(String(2), nullable=False)
     destinatario_cep: Mapped[str] = mapped_column(String(9), nullable=False)
 
-    lista_de_pedidos: Mapped[List["Pedido"]] = sa.orm.relationship("Pedido",
-                                                                   back_populates="endereco",
-                                                                   lazy="select",
-                                                                   cascade="all, delete-orphan")
-
-    usuario: Mapped["User"] = sa.orm.relationship("User",
-                                                  lazy="select",
-                                                  back_populates="lista_de_enderecos")
+    usuario = sa.orm.relationship("User",
+                                  lazy="select",
+                                  back_populates="lista_de_enderecos")
 
 
 class ItemPedido(db.Model, OperationsMixin):
@@ -76,9 +71,10 @@ class ItemPedido(db.Model, OperationsMixin):
     quantidade: Mapped[Integer] = mapped_column(Integer, default=0)
     valor_unitario: Mapped[Optional[DECIMAL]] = mapped_column(DECIMAL(10, 2), default=0.00)
 
-    pedido: Mapped["Pedido"] = sa.orm.relationship("Pedido",
-                                                   lazy="select",
-                                                   back_populates="lista_de_produtos")
-    produto: Mapped["Produto"] = sa.orm.relationship("Produto",
-                                                     lazy="select",
-                                                     back_populates="lista_de_pedidos")
+    pedido = sa.orm.relationship("Pedido",
+                                 lazy="select",
+                                 back_populates="lista_de_produtos")
+
+    produto = sa.orm.relationship("Produto",
+                                  lazy="select",
+                                  back_populates="lista_de_pedidos")

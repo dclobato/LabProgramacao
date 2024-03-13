@@ -1,5 +1,5 @@
 import uuid
-from typing import Self, TypeVar
+from typing import Self
 
 import sqlalchemy as sa
 from sqlalchemy import func
@@ -8,7 +8,6 @@ from src.modules import db
 
 
 class OperationsMixin:
-    T = TypeVar('T')
 
     @classmethod
     def is_empty(cls) -> bool:

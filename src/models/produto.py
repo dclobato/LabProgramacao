@@ -1,16 +1,16 @@
 import io
 import uuid
 from base64 import b64decode
-from typing import Optional, List
+from typing import Optional
 
 import sqlalchemy as sa
 from PIL import Image
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Uuid, String, DECIMAL, Integer, Boolean, Text
 
-from src.models import TimestampMixin
-from src.models.operationsmixin import OperationsMixin
 from src.modules import db
+from . import TimestampMixin
+from .mixins import OperationsMixin
 
 
 class Produto(db.Model, TimestampMixin, OperationsMixin):
@@ -27,12 +27,8 @@ class Produto(db.Model, TimestampMixin, OperationsMixin):
     categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("categorias.id"))
 
     categoria = sa.orm.relationship("Categoria",
+                                    lazy="select",
                                     back_populates="lista_de_produtos")
-
-    lista_de_pedidos: Mapped[List["Pedido"]] = sa.orm.relationship("ItemPedido",
-                                                                   back_populates="produto",
-                                                                   lazy="selectin",
-                                                                   cascade="all, delete-orphan")
 
     def thumbnail(self, max_size: int = 64) -> (bytes, str):
         saida = io.BytesIO()

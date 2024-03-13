@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy.types import Uuid, String
 
 from src.models import TimestampMixin
-from src.models.operationsmixin import OperationsMixin
+from src.models.mixins import OperationsMixin
 from src.modules import db
 
 
@@ -16,5 +16,5 @@ class Categoria(db.Model, TimestampMixin, OperationsMixin):
     nome: Mapped[str] = mapped_column(String(60), nullable=False)
     lista_de_produtos = sa.orm.relationship("Produto",
                                             back_populates="categoria",
-                                            lazy="selectin",
+                                            lazy="select",
                                             cascade="all, delete-orphan")

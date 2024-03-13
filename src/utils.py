@@ -1,9 +1,12 @@
+import json
 from base64 import b64encode
 from datetime import date
 from io import BytesIO
 
 import email_validator
+import requests
 from qrcode.main import QRCode
+from requests import RequestException
 
 
 # Formatando as datas para horário local
@@ -43,3 +46,20 @@ def normalized_email(email: str, check_deliverability: bool = False) -> str:
 
 def split_by(texto: str, size: int = 4, separador: str = ' '):
     return separador.join(texto[i:i + size] for i in range(0, len(texto), size))
+
+
+# https://github.com/leogregianin/viacep-python/tree/main
+class ViaCep:
+    def __init__(self, cep):
+        self.cep = cep
+
+    def getDadosCep(self):
+        url_api = f"http://www.viacep.com.br/ws/{self.cep}/json"
+        try:
+            req = requests.get(url_api)
+            if req.status_code == 200:
+                return (json.loads(req.text))
+            else:
+                return None
+        except RequestException:
+            return None
