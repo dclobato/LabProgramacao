@@ -5,8 +5,9 @@ from flask_login import login_required
 from src.forms.categoria import NovoCategoriaForm, EditCategoriaForm
 from src.models.categoria import Categoria
 from src.modules import db
+from src.role_management import papeis_aceitos
 
-bp = Blueprint("categoria", __name__, url_prefix="/categoria")
+bp = Blueprint("categoria", __name__, url_prefix="/admin/categoria")
 
 
 @bp.route("/", methods=["GET"])
@@ -30,25 +31,20 @@ def lista():
     sentenca = sentenca.order_by(Categoria.nome)
 
     try:
-        rset_page = db.paginate(sentenca, page=page, per_page=pp,
-                                max_per_page=MAXPERPAGE, error_out=True)
+        rset_page = db.paginate(sentenca, page=page, per_page=pp, max_per_page=MAXPERPAGE, error_out=True)
     except werkzeug.exceptions.NotFound as e:
         current_app.logger.warning(f"Exception: {e}")
         page = 1
         flash("Não existem registros na página solicitada. Apresentando primeira página", category='info')
-        rset_page = db.paginate(sentenca, page=page, per_page=pp,
-                                max_per_page=MAXPERPAGE, error_out=True)
+        rset_page = db.paginate(sentenca, page=page, per_page=pp, max_per_page=MAXPERPAGE, error_out=True)
 
-    return render_template("categoria/lista.jinja",
-                           rset_page=rset_page,
-                           page=page,
-                           pp=pp,
-                           q=q,
+    return render_template("categoria/lista.jinja", rset_page=rset_page, page=page, pp=pp, q=q,
                            title="Lista de categorias")
 
 
 @bp.route("/novo", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def novo():
     form = NovoCategoriaForm()
     if form.validate_on_submit():
@@ -58,15 +54,14 @@ def novo():
         db.session.commit()
         flash(message=f"Categoria '{form.nome.data}' adicionada", category="success")
         return redirect(url_for('categoria.lista'))
-    return render_template("render_simple_form.jinja",
-                           title="Nova categoria",
-                           form=form)
+    return render_template("render_simple_slim_form.jinja", title="Nova categoria", form=form)
 
 
 @bp.route("/edit/<uuid:id_categoria>", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def edit(id_categoria):
-    categoria = db.session.get(Categoria, id_categoria)
+    categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
         flash("Categoria inexistente!", category='danger')
         return redirect(url_for('categoria.lista'))
@@ -83,14 +78,16 @@ def edit(id_categoria):
 
 @bp.route("/remove/<uuid:id_categoria>", methods=["GET", "POST"])
 @login_required
+@papeis_aceitos("Admin")
 def remove(id_categoria):
-    categoria = db.session.get(Categoria, id_categoria)
+    categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
         flash("Categoria inexistente!", category='danger')
         return redirect(url_for('categoria.lista'))
 
     if request.method == "POST":  # confirmação da remoção
-        flash(message=f"Categoria '{categoria.nome}' e produtos removidos!", category='success')
+        flash(message=f"Categoria '{categoria.nome}' e {len(categoria.lista_de_produtos)} produtos removidos!",
+              category='success')
         db.session.delete(categoria)
         db.session.commit()
         return redirect(url_for("categoria.lista"))

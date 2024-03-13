@@ -21,6 +21,10 @@
             <th scope="row" class="text-start">Última atualização</th>
             <td class="text-center">{{ current_user.dta_atualizacao | as_localtime }}</td>
         </tr>
+        <tr>
+            <th scope="row" class="text-start">Papéis</th>
+            <td class="text-end">{{ ", ".join(current_user.nomes_dos_papeis) }}</td>
+        </tr>
         {% if current_user.usa_2fa %}
         <tr>
             <th scope="row" class="text-start">Autenticação em dois fatores</th>

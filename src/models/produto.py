@@ -3,16 +3,16 @@ import uuid
 from base64 import b64decode
 from typing import Optional
 
-import sqlalchemy as sa
 from PIL import Image
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid, String, DECIMAL, Integer, Boolean, Text
 
-from src.models import TimestampMixin
 from src.modules import db
+from .base_mixin import TimestampMixin, BasicRepositoryMixin
 
 
-class Produto(db.Model, TimestampMixin):
+class Produto(db.Model, TimestampMixin, BasicRepositoryMixin):
     __tablename__ = "produtos"
 
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -23,11 +23,10 @@ class Produto(db.Model, TimestampMixin):
     foto_base64: Mapped[Optional[Text]] = mapped_column(Text, nullable=True)
     foto_mime: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     possui_foto: Mapped[Boolean] = mapped_column(Boolean, default=False)
-    categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), sa.ForeignKey("categorias.id"))
+    categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("categorias.id"))
 
-    categoria = sa.orm.relationship("Categoria",
-                                    back_populates="lista_de_produtos")
-
+    categoria = relationship("Categoria",  # Type: Mapped[Categoria]
+                                        back_populates="lista_de_produtos")
     def thumbnail(self, max_size: int = 64) -> (bytes, str):
         saida = io.BytesIO()
         max_size = min(max_size, 128)
