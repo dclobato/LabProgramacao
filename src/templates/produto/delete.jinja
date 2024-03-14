@@ -1,0 +1,36 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/form.html' import render_form %}
+{% from 'produto/produto-sidebar.jinja' import produtosidebar %}
+
+{% block content %}
+    <!-- novalidate=True implica em server-side validation -->
+    <div class="container d-flex">
+        <div class="me-auto">
+            {{ produtosidebar(produto) }}
+        </div>
+        <div class="ms-5 flex-grow-1">
+            <table class="table table-sm">
+                <tr>
+                    <th scope="row">Nome</th>
+                    <td>{{ produto.nome }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Preço do produto</th>
+                    <td>R$ {{ "%.2f" % produto.preco }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Categoria</th>
+                    <td>{{ produto.categoria.nome }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Produto ativo?</th>
+                    <td>{% if produto.ativo %}Sim{% else %}Não{% endif %}</td>
+                </tr>
+            </table>
+            <form action="" method="post">
+                <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-danger float-end">Remover o produto</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

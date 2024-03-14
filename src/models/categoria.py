@@ -13,5 +13,5 @@ class Categoria(db.Model, TimestampMixin, BasicRepositoryMixin):
     nome: Mapped[str] = mapped_column(String(60), nullable=False)
 
     lista_de_produtos = relationship("Produto",  # Type: Mapped[Optional[List[Produto]]]
-                                            back_populates="categoria", lazy="select",
-                                            cascade="all, delete-orphan")
+                                     back_populates="categoria", lazy="select",
+                                     cascade="all, delete-orphan")

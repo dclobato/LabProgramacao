@@ -26,7 +26,8 @@ class Produto(db.Model, TimestampMixin, BasicRepositoryMixin):
     categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("categorias.id"))
 
     categoria = relationship("Categoria",  # Type: Mapped[Categoria]
-                                        back_populates="lista_de_produtos")
+                             back_populates="lista_de_produtos")
+
     def thumbnail(self, max_size: int = 64) -> (bytes, str):
         saida = io.BytesIO()
         max_size = min(max_size, 128)

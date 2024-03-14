@@ -1,0 +1,72 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+{% from 'bootstrap5/pagination.html' import render_pagination %}
+{% from 'utils/pagination_helpers.jinja' import linhas_por_pagina, nome_parcial, escolha_categoria, apenas_inativos %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="clearfix mb-4 align-items-center">
+            <form action="{{ url_for('produto.lista') }}" method="get">
+                <div class="float-start small">
+                    <div class="hstack gap-3">
+                        {{ linhas_por_pagina(pp) }}
+                        {{ nome_parcial(q) }}
+                        {{ escolha_categoria(categorias, c) }}
+                        {{ apenas_inativos(a) }}
+                    </div>
+                </div>
+                <div class="float-end">
+                    <button type="submit" class="btn btn-secondary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col" class="text-end">Preco</th>
+                <th scope="col" class="text-end">Estoque</th>
+                <th scope="col" class="text-center">Ativo</th>
+                <th scope="col">Categoria</th>
+                <th scope="col" class="text-center">Ações</th>
+            </tr>
+            <tbody>
+            {% for produto in rset_page %}
+                <tr>
+                    <td>{{ produto.nome }}</td>
+                    <td class="text-end">R$ {{ "%.2f" % produto.preco }}</td>
+                    <td class="text-end">
+                        {% if produto.estoque <= 0 %}{{ render_icon("exclamation-diamond-fill", color="warning") }}
+                            &nbsp;&nbsp;{% endif %}
+                        {{ produto["estoque"] }}</td>
+                    <td class="text-center">{% if produto.ativo %}{{ render_icon("check-all", color="success") }}
+                    {% else %}
+                        {{ render_icon("dash-circle-fill", color="danger") }}
+                    {% endif %}</td>
+                    <td>{{ produto.categoria.nome }}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('produto.edit', id_produto=produto.id) }}">
+                                {{ render_icon("pencil-square", title="Alterar") }}</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('produto.remove', id_produto=produto.id) }}">
+                                {{ render_icon("trash", title="Excluir") }}</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="row justify-content-center">
+        <div class="clearfix">
+            <div class="float-start small">
+                Mostrando itens {{ rset_page.first }} a {{ rset_page.last }} de um total de {{ rset_page.total }}
+            </div>
+            <div class="float-end">
+                {{ render_pagination(rset_page, "categoria.lista", size="sm", align="right",
+                                    args={"pp": pp, "c": c, "a": a, "q": q}) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

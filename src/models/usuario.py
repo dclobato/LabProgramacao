@@ -52,7 +52,8 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
                                     back_populates="usuario", lazy="select", cascade="all, delete-orphan")
 
     pertence_aos_papeis: Mapped[List["Role"]] = relationship(secondary=users_roles,  # Type: Mapped[List[Role]]
-                                       lazy="select", back_populates="usuarios_no_papel", cascade="all, delete")
+                                                             lazy="select", back_populates="usuarios_no_papel",
+                                                             cascade="all, delete")
 
     @property
     def otp_secret_formatted(self):
@@ -206,7 +207,8 @@ class Role(db.Model, BasicRepositoryMixin):
     nome: Mapped[str] = mapped_column(String(60), nullable=False, unique=True, index=True)
 
     usuarios_no_papel: Mapped[List["User"]] = relationship(secondary=users_roles,  # Type:
-                                     lazy="select", back_populates="pertence_aos_papeis", viewonly=True)
+                                                           lazy="select", back_populates="pertence_aos_papeis",
+                                                           viewonly=True)
 
     def __init__(self, _nome: str):
         # noinspection PyTypeChecker

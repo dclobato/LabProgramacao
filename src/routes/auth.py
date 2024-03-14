@@ -1,15 +1,14 @@
 from urllib.parse import urlsplit
 
 import pyotp
-import pytz
 from flask import redirect, url_for, flash, request, render_template, Blueprint, current_app
 from flask_login import current_user, login_user, login_required, logout_user
 
+from src import utils
 from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm, ProfileForm, \
     Read2FACodeForm
 from src.models.usuario import User, Role
 from src.modules import db
-from src import utils
 
 bp = Blueprint("auth", __name__, url_prefix="/admin/user")
 

@@ -19,3 +19,24 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro escolha_categoria(categorias, c) %}
+    <div class="p-2">
+        <div class="input-group input-group-sm">
+            <div class="input-group-text">Categoria</div>
+            <select name="c" type="" class="form-control-sm" id="categoria">
+                <option value="">-- Todas --</option>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria[0] }}"{% if categoria[0] | string == c %} selected{% endif %}>{{ categoria[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro apenas_inativos(a) %}
+<div class="p-2">
+    <input name="a" type="checkbox" class="btn-check" id="a" {% if a == 'on' %}checked{% endif %} autocomplete="off">
+    <label class="btn btn-outline-secondary" for="a">Apenas inativos</label>
+</div>
+{% endmacro %}
