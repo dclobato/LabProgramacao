@@ -1,0 +1,28 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col" class="text-end">Preco</th>
+                <th scope="col" class="text-end">Estoque</th>
+                <th scope="col" class="text-center">Ativo</th>
+                <th scope="col">Categoria</th>
+            </tr>
+            <tbody>
+            {% for produto in rset %}
+                <tr>
+                    <td>{{ produto.nome }}</td>
+                    <td class="text-end">R$ {{ "%.2f" % produto.preco }}</td>
+                    <td class="text-end">{{ produto.estoque }}</td>
+                    <td class="text-center">{% if produto.ativo %}{{ render_icon("check-all", color="success") }}
+                    {% else %}{{ render_icon("dash-circle-fill", color="danger") }}{% endif %}</td>
+                    <td>{{ produto.categoria.nome }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

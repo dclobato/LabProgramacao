@@ -1,0 +1,42 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col">e-mail</th>
+                <th scope="col">Acesso anterior</th>
+                <th scope="col">Acesso atual</th>
+                <th scope="col" class="text-center">2FA</th>
+                <th scope="col">Papéis</th>
+                <th scope="col" class="text-center">Ativo</th>
+            </tr>
+            <tbody>
+            {{  rset }}
+            {% for usuario in rset %}
+                <tr>
+                    <td>{{ usuario.nome }}</td>
+                    <td>
+                        {{ usuario.email }} {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_email', user_id=usuario.id) }}">{% endif %}{% if usuario.email_validado %}{{ render_icon("check", color="success") }}{% else %}{{ render_icon("x", color="danger") }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
+                    </td>
+                    <td class="small">{{ usuario.dta_ultimo_acesso | as_localtime }} de {{ usuario.ip_ultimo_acesso }}</td>
+                    <td class="small">{{ usuario.dta_acesso_atual | as_localtime }} de {{ usuario.ip_acesso_atual }}</td>
+                    <td class="text-center">
+                    {% if usuario.usa_2fa %}
+                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.disable_2fa', user_id=usuario.id) }}">{% endif %}{{ render_icon("check", color="success") }}{% if current_user.id != usuario.id %}</a>{% endif %}
+                    {% else %}
+                        {{ render_icon("x", color="danger") }}
+                    {% endif %}
+                    </td>
+                    <td class="small">{{ ", ".join(usuario.nomes_dos_papeis) }}</td>
+                    <td class="text-center">
+                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_active', user_id=usuario.id) }}">{% endif %}{% if usuario.is_active %}{{ render_icon("check", color="success") }}{% else %}{{ render_icon("x", color="danger") }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

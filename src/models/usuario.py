@@ -38,6 +38,8 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     email_validado: Mapped[Boolean] = mapped_column(Boolean, default=False)
     dta_validacao_email: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
 
+    ativo: Mapped[Boolean] = mapped_column(Boolean, default=False)
+
     dta_ultimo_acesso: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
     dta_acesso_atual: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
     ip_ultimo_acesso: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
@@ -54,6 +56,10 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     pertence_aos_papeis: Mapped[List["Role"]] = relationship(secondary=users_roles,  # Type: Mapped[List[Role]]
                                                              lazy="select", back_populates="usuarios_no_papel",
                                                              cascade="all, delete")
+
+    @property
+    def is_active(self):
+        return self.ativo
 
     @property
     def otp_secret_formatted(self):
@@ -83,6 +89,7 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         r = list()
         for papel in self.pertence_aos_papeis:
             r.append(papel.nome)
+        r.sort()
         return r
 
     @classmethod

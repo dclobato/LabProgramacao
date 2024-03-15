@@ -3,12 +3,14 @@ from urllib.parse import urlsplit
 import pyotp
 from flask import redirect, url_for, flash, request, render_template, Blueprint, current_app
 from flask_login import current_user, login_user, login_required, logout_user
+from markupsafe import Markup
 
 from src import utils
 from src.forms.auth import LoginForm, SetNewPasswordForm, AskToResetPassword, RegistrationForm, ProfileForm, \
     Read2FACodeForm
 from src.models.usuario import User, Role
 from src.modules import db
+from src.role_management import papeis_aceitos
 
 bp = Blueprint("auth", __name__, url_prefix="/admin/user")
 
@@ -27,8 +29,11 @@ def login():
         if not usuario.check_password(form.password.data):
             flash('Email ou senha incorretos', category="warning")
             return redirect(url_for('auth.login'))
+        if not usuario.ativo:
+            flash('Usuário está impedido de acessar o sistema. Busque um administrador', category="danger")
+            return redirect(url_for('auth.login'))
         if not usuario.email_validado:
-            flash('Email ainda não confirmado', category="warning")
+            flash(Markup(f'Email ainda não confirmado. Precisa de um <a href="{url_for('auth.revalida_email', user_id=usuario.id)}">novo email de ativação</a>?'), category='warning')
             return redirect(url_for('auth.login'))
         if usuario.usa_2fa:
             flash(f"Conclua o login para o usuário {usuario.email}", category="info")
@@ -149,7 +154,7 @@ def user():
             if not current_user.usa_2fa:
                 current_user.otp_secret = pyotp.random_base32()
                 db.session.commit()
-                flash("Alteração efetuadas. Conclua ativação da autenticação em dois fatores", "success")
+                flash("Alteração efetuadas. Conclua ativação do segundo fator de autenticação", "success")
                 return redirect(url_for("auth.enable_2fa"))
         else:
             if current_user.usa_2fa:
@@ -161,6 +166,9 @@ def user():
                     for codigo in current_user.lista_2fa_backup:
                         db.session.delete(codigo)
                     flash("Códigos de autenticação reservas foram removidos", category="info")
+                    body = render_template("auth/email/disable_2fa-email.jinja", user=current_user)
+                if not current_user.send_email(subject="Desativacao do segundo fator de autenticacao", body=body):
+                    current_app.logger.warning(f"Email de desativação do 2FA para o usuario {str(current_user.id)} não enviado")
         db.session.commit()
         flash(message="Alterações efetuadas", category='success')
         return redirect(url_for("auth.user"))
@@ -171,7 +179,7 @@ def user():
 @login_required
 def enable_2fa():
     if current_user.usa_2fa:
-        flash("Configuração já efetuada. Para alterar, desative e reative a autenticação em dois fatores",
+        flash("Configuração já efetuada. Para alterar, desative e reative o uso segundo fator de autenticação",
               category="info")
         return redirect(url_for("auth.user"))
     form = Read2FACodeForm()
@@ -183,7 +191,7 @@ def enable_2fa():
                 current_user.dta_ativacao_2fa = utils.timestamp()
                 codigos = current_user.generate_2fa_backup(10)
                 db.session.commit()
-                flash("Autenticação em dois fatores ativada.", "success")
+                flash("Segundo fator de autenticação ativado.", "success")
                 return render_template("auth/show_2fa_backup.jinja", codigos=codigos,
                                        title="Códigos reserva para autenticação")
             except Exception:
@@ -191,13 +199,13 @@ def enable_2fa():
                 current_user.otp_secret = None
                 current_user.dta_ativacao_2fa = None
                 db.session.commit()
-                flash("Problema da ativação da autenticação em dois fatores", "danger")
+                flash("Problema da ativação do segundo fator de autenticação", "danger")
                 return redirect(url_for("auth.user"))
         else:
             flash("O código informado está incorreto. Tente novamente.", "warning")
             return redirect(url_for("auth.enable_2fa"))
     imagem = current_user.get_b64encoded_qr_totp_uri
-    return render_template("auth/enable_2fa.jinja", title="Ativação da autenticação em dois fatores", form=form,
+    return render_template("auth/enable_2fa.jinja", title="Ativação do segundo fator de autenticação", form=form,
                            imagem=imagem, token=current_user.otp_secret_formatted)
 
 
@@ -226,3 +234,74 @@ def get2fa(user_id):
             else:
                 flash("Código incorreto", category="warning")
     return render_template('render_simple_slim_form.jinja', title='Autenticação em dois fatores', form=form)
+
+
+@bp.route('/management')
+@login_required
+@papeis_aceitos("Admin")
+def management():
+    sentenca = db.select(User).order_by(User.nome)
+    usuarios = db.session.execute(sentenca).scalars()
+
+    return render_template('auth/management/lista.jinja',
+                           title = "Gerenciamento de usuários",
+                           rset = usuarios)
+
+
+@bp.route('/flip_active/<uuid:user_id>')
+@login_required
+@papeis_aceitos("Admin")
+def flip_active(user_id):
+    usuario = User.get_by_id(user_id)
+    if usuario:
+        usuario.ativo = not usuario.ativo
+        db.session.commit()
+    return redirect(url_for("auth.management"))
+
+
+@bp.route('/flip_email/<uuid:user_id>')
+@login_required
+@papeis_aceitos("Admin")
+def flip_email(user_id):
+    usuario = User.get_by_id(user_id)
+    if usuario:
+        usuario.email_validado = not usuario.email_validado
+        usuario.dta_validacao_email = utils.timestamp() if usuario.email_validado else None
+    db.session.commit()
+    return redirect(url_for("auth.management"))
+
+@bp.route('/revalida_email/<uuid:user_id>')
+def revalida_email(user_id):
+    usuario = User.get_by_id(user_id)
+    if usuario:
+        body = render_template("auth/email/reconfirmation-email.jinja", user=usuario,
+                               token=usuario.create_jwt_token("validate_email"),
+                               host=current_app.config.get("APP_BASE_URL"))
+        if not usuario.send_email(subject="Revalide o seu email", body=body):
+            current_app.logger.warning(f"Email de revalidação para o usuario {str(usuario.id)} não enviado")
+        flash("Mensagem para validação de e-mail enviada", category='info')
+        db.session.commit()
+    next_page = request.args.get('next')
+    if not next_page or urlsplit(next_page).netloc != '':
+        next_page = url_for('index')
+    return redirect(next_page)
+
+@bp.route('/disable_2fa/<uuid:user_id>')
+@login_required
+@papeis_aceitos("Admin")
+def disable_2fa(user_id):
+    usuario = User.get_by_id(user_id)
+    if usuario and usuario.usa_2fa:
+        usuario.usa_2fa = False
+        usuario.otp_secret = None
+        usuario.ultimo_otp = None
+        usuario.dta_ativacao_2fa = None
+        if len(usuario.lista_2fa_backup) > 0:
+            for codigo in current_user.lista_2fa_backup:
+                db.session.delete(codigo)
+        body = render_template("auth/email/disable_2fa-email.jinja", user=usuario)
+        if not usuario.send_email(subject="Desativacao do segundo fator de autenticacao", body=body):
+            current_app.logger.warning(f"Email de desativação do 2FA para o usuario {str(usuario.id)} não enviado")
+        flash(f"Segundo fator de autenticação desativado para o usuário {usuario.email}", category='info')
+        db.session.commit()
+    return redirect(url_for("auth.management"))

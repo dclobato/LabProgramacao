@@ -197,3 +197,22 @@ def thumbnail(id_produto, max_size: int = 64):
         return Response(status=404)
     imagem_content, imagem_type = produto.thumbnail(max_size=max_size)
     return Response(imagem_content, mimetype=imagem_type)
+
+
+@bp.route("/em_falta", methods=["GET"])
+@login_required
+def emfalta():
+    pdf = True if request.args.get("pdf") else False
+    sentenca = db.select(Produto).where(Produto.estoque<=0).order_by(Produto.estoque.asc())
+    rset = db.session.execute(sentenca).scalars()
+    if not rset:
+        flash("Não há produtos em falta", category="success")
+        return redirect(url_for("/"))
+    if pdf:
+        return render_template('produto/emfalta.jinja',
+                               title = "Produtos em falta",
+                               rset = rset)
+    else:
+        return render_template('produto/emfalta.jinja',
+                               title = "Produtos em falta",
+                               rset = rset)

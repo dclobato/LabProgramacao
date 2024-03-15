@@ -23,8 +23,10 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="#">{{ render_icon('exclamation-diamond') }}&nbsp;Produtos
+                            <li><a class="dropdown-item" href="{{ url_for('produto.emfalta') }}">{{ render_icon('exclamation-diamond') }}&nbsp;Produtos
                                 em falta</a></li>
+                            <li><a class="dropdown-item" href="#">{{ render_icon('boxes') }}&nbsp;Estoque</a></li>
+                            <li><a class="dropdown-item" href="#">{{ render_icon('cart') }}&nbsp;Comprar/vender</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -38,10 +40,6 @@
                             <li><a class="dropdown-item"
                                    href="{{ url_for('categoria.novo') }}">{{ render_icon('plus') }}&nbsp;Adicionar</a>
                             </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="#">{{ render_icon('boxes') }}&nbsp;Estoque</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown ms-5">
@@ -61,7 +59,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('auth.register') }}">{{ render_icon('person-plus') }}&nbsp;Criar conta</a></li>
                         {% else %}
                             <li><a class="dropdown-item" href="{{ url_for('auth.user') }}">{{ render_icon('person') }}&nbsp;Perfil</a></li>
-                            <li><a class="dropdown-item" href="#">{{ render_icon('toggles') }}&nbsp;Configuração</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.management') }}">{{ render_icon('toggles') }}&nbsp;Configuração</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">{{ render_icon('box-arrow-right') }}&nbsp;Logout</a>
                         {% endif %}

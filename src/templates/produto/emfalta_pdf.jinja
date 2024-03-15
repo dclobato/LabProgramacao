@@ -1,0 +1,45 @@
+{% from 'bootstrap5/utils.html' import render_icon %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    {% block head %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+        {{ bootstrap.load_css() }}
+        <title>{% if title %}{{ title }} - {% endif %}App</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    {% endblock %}
+</head>
+<body id="page-top" class="d-flex flex-column min-vh-100 mx-2 mt-3">
+{% if title %}
+    <div class="jumbotron"><h1 class="display-4">{{ title }}</h1></div>
+{% endif %}
+<main id="content" class="px-5">
+    <div class="container-fluid">
+    <div class="row justify-content-center">
+        <table class="table table-sm table-striped table-hover">
+            <tr>
+                <th scope="col">Nome</th>
+                <th scope="col" class="text-end">Preco</th>
+                <th scope="col" class="text-end">Estoque</th>
+                <th scope="col" class="text-center">Ativo</th>
+                <th scope="col">Categoria</th>
+            </tr>
+            <tbody>
+            {% for produto in rset %}
+                <tr>
+                    <td>{{ produto.nome }}</td>
+                    <td class="text-end">R$ {{ "%.2f" % produto.preco }}</td>
+                    <td class="text-end">{{ produto.estoque }}</td>
+                    <td class="text-center">{% if produto.ativo %}{{ render_icon("check-all", color="success") }}
+                    {% else %}{{ render_icon("dash-circle-fill", color="danger") }}{% endif %}</td>
+                    <td>{{ produto.categoria.nome }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+</main>
+</body>
+</html>

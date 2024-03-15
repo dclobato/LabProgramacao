@@ -116,11 +116,13 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                 {"nome": "Administrador",
                  "email": app.config.get("DEFAULT_ADMIN_EMAIL", "admin@admin.com.br"),
                  "senha": "123",
+                 "ativo": True,
                  "papeis": ["Admin", "Usuario"],
                  },
                 {"nome": "Usuario",
                  "email": app.config.get("DEFAULT_USER_EMAIL", "user@user.com.br"),
                  "senha": "123",
+                 "ativo": False,
                  "papeis": ["Usuario"],
                  },
             ]
@@ -131,6 +133,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                 novo_usuario.email = usuario.get('email')
                 novo_usuario.set_password(usuario.get('senha'))
                 novo_usuario.email_validado = True
+                novo_usuario.ativo = usuario.get('ativo')
                 novo_usuario.dta_validacao_email = utils.timestamp()
                 novo_usuario.usa_2fa = False
                 for nome_papel in usuario.get("papeis"):
