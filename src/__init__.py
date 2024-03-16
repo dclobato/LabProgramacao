@@ -21,7 +21,7 @@ from src.modules import bootstrap, minify, db, migration, csrf, login, mail
 from src.utils import as_localtime
 
 
-def create_app(config_filename: str = "config.dev.json") -> Flask:
+def create_app(config_filename: str = 'config.dev.json') -> Flask:
     app = Flask(__name__, instance_relative_config=True, static_folder='static', template_folder='templates')
 
     # Desativar as mensagens do servidor HTTP
@@ -45,42 +45,42 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
     try:
         app.config.from_file(config_filename, load=json.load)
     except FileNotFoundError as e:
-        app.logger.fatal(f"Arquivo '{config_filename}' não encontrado")
+        app.logger.fatal(f"Arquivo \"{config_filename}\" não encontrado")
         app.logger.fatal(f"Exception: {e}")
         exit(1)
 
     mandatory_keys = [
-        "SQLALCHEMY_DATABASE_URI",
-        "MIGRATION_DIR",
-        "TIMEZONE",
-        "SECRET_KEY",
-        "APP_BASE_URL",
-        "APP_NAME",
-        "APP_MTA_MESSAGEID",
+        'APP_BASE_URL',
+        'APP_MTA_MESSAGEID',
+        'APP_NAME',
+        'MIGRATION_DIR',
+        'SECRET_KEY',
+        'SQLALCHEMY_DATABASE_URI',
+        'TIMEZONE',
     ]
     for key in mandatory_keys:
         if app.config.get(key, None) is None:
-            app.logger.fatal(f"Necessário definir a chave '{key}' no arquivo {config_filename}")
+            app.logger.fatal(f"Necessário definir a chave \"{key}\" no arquivo {config_filename}")
             exit(1)
 
     app.logger.debug("Inicializando módulos básicos")
     bootstrap.init_app(app)
-    if "MINIFY" in app.config:
-        if app.config.get("MINIFY"):
+    if 'MINIFY' in app.config:
+        if app.config.get('MINIFY'):
             minify.init_app(app)
     db.init_app(app)
-    migration.init_app(app, db, directory=app.config.get("MIGRATION_DIR", "src/migrations"), render_as_batch=True)
+    migration.init_app(app, db, directory=app.config.get('MIGRATION_DIR'), render_as_batch=True)
     csrf.init_app(app)
     mail.init_app(app)
     login.init_app(app)
-    login.login_view = "auth.login"
+    login.login_view = 'auth.login'
     login.login_message = "É necessário estar logado para acessar esta funcionalidade"
-    login.login_message_category = "warning"
-    login.session_protection = "strong"
+    login.login_message_category = 'warning'
+    login.session_protection = 'strong'
 
     # Formatando as datas para horário local
     # https://stackoverflow.com/q/65359968
-    app.jinja_env.filters["as_localtime"] = as_localtime
+    app.jinja_env.filters['as_localtime'] = as_localtime
 
     app.logger.debug("Registrando as blueprints")
     app.register_blueprint(src.routes.auth.bp)
@@ -93,7 +93,7 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         # SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'DBName'
         # Como o sqlite é um arquivo no sistema de arquivos, vamos simplesmente
         # verificar se o arquivo existe
-        arquivo = Path(app.instance_path) / Path(app.config.get("SQLITE_DB_NAME", "application_db.sqlite3"))
+        arquivo = Path(app.instance_path) / Path(app.config.get('SQLITE_DB_NAME', 'application_db.sqlite3'))
         if not arquivo.is_file():
             app.logger.info(f"Criando o banco de dados em {arquivo}")
             if Path(migration.directory).is_dir():
@@ -101,45 +101,45 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
                 shutil.rmtree(Path(migration.directory))
             app.logger.info(f"Efetuando a migração inicial")
             init()
-            revision(message="Migracao inicial de dentro da App", autogenerate=True, head="head")
-            upgrade(revision="head")
+            revision(message="Migracao inicial de dentro da App", autogenerate=True, head='head')
+            upgrade(revision='head')
 
         if Role.is_empty():
-            papeis = ["Admin", "Usuario"]
+            papeis = ['Admin', 'Usuario']
             for nome_papel in papeis:
                 db.session.add(Role(nome_papel))
-                app.logger.info(f"Adicionando papel '{nome_papel}'")
+                app.logger.info(f"Adicionando papel \"{nome_papel}\"")
             db.session.commit()
 
         if User.is_empty():
             usuarios = [
-                {"nome": "Administrador",
-                 "email": app.config.get("DEFAULT_ADMIN_EMAIL", "admin@admin.com.br"),
-                 "senha": "123",
-                 "ativo": True,
-                 "papeis": ["Admin", "Usuario"],
+                {'nome': "Administrador",
+                 'email': app.config.get('DEFAULT_ADMIN_EMAIL', 'admin@admin.com.br'),
+                 'senha': "123",
+                 'ativo': True,
+                 'papeis': ['Admin', 'Usuario'],
                  },
-                {"nome": "Usuario",
-                 "email": app.config.get("DEFAULT_USER_EMAIL", "user@user.com.br"),
-                 "senha": "123",
-                 "ativo": False,
-                 "papeis": ["Usuario"],
+                {'nome': "Usuario",
+                 'email': app.config.get('DEFAULT_USER_EMAIL', 'user@user.com.br'),
+                 'senha': "123",
+                 'ativo': False,
+                 'papeis': ['Usuario'],
                  },
             ]
             for usuario in usuarios:
                 app.logger.info(f"Adicionando usuário ({usuario.get('email')}:{usuario.get('senha')})")
                 novo_usuario = User()
-                novo_usuario.nome = usuario.get("nome")
+                novo_usuario.nome = usuario.get('nome')
                 novo_usuario.email = usuario.get('email')
                 novo_usuario.set_password(usuario.get('senha'))
                 novo_usuario.email_validado = True
                 novo_usuario.ativo = usuario.get('ativo')
                 novo_usuario.dta_validacao_email = utils.timestamp()
                 novo_usuario.usa_2fa = False
-                for nome_papel in usuario.get("papeis"):
-                    papel = Role.get_first_or_none_by("nome", nome_papel, casesensitive=False)
+                for nome_papel in usuario.get('papeis'):
+                    papel = Role.get_first_or_none_by('nome', nome_papel, casesensitive=False)
                     if not papel:
-                        raise ValueError(f"Papel '{nome_papel}' inexistente")
+                        raise ValueError(f"Papel \"{nome_papel}\" inexistente")
                     novo_usuario.pertence_aos_papeis.append(papel)
                 db.session.add(novo_usuario)
                 db.session.commit()
@@ -151,13 +151,13 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
             for seed in seed_data:
                 cc += 1
                 categoria = Categoria()
-                categoria.nome = seed["categoria"]
+                categoria.nome = seed.get('categoria')
                 db.session.add(categoria)
-                for p in seed["produtos"]:
+                for p in seed.get('produtos'):
                     pc += 1
                     produto = Produto()
-                    produto.nome = p["nome"]
-                    produto.preco = p["preco"]
+                    produto.nome = p.get('nome')
+                    produto.preco = p.get('preco')
                     produto.estoque = random.randrange(-5, 60)
                     produto.ativo = random.random() < 0.8
                     produto.categoria = categoria
@@ -188,9 +188,10 @@ def create_app(config_filename: str = "config.dev.json") -> Flask:
         else:
             return User.get_by_id(auth_id)
 
-    @app.route("/")
-    @app.route("/index")
+    @app.route('/')
+    @app.route('/index')
     def index():
-        return render_template("index.jinja", title="Página inicial")
+        return render_template('index.jinja',
+                               title="Página inicial")
 
     return app

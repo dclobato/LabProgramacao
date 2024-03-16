@@ -13,7 +13,7 @@
             <th scope="row" colspan="2" class="text-center">
                 <a href="#" data-bs-toggle="modal" data-bs-target="#fullimage">
                 <img src="{{ url_for('produto.thumbnail', id_produto=produto.id, max_size=128) }}"
-                     class="img-fluid img-thumbnail mb-3 mt-5" /><br />
+                     class="img-fluid img-thumbnail mb-3 mt-5" alt="Imagem de {{ produto.nome }}"/><br />
                 </a>
                 <small>Clique para imagem em tamanho grande</small>
                 <div class="modal fade" id="fullimage" tabindex="-1">
@@ -24,7 +24,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body active">
-                                <img src="{{ url_for('produto.imagem', id_produto=produto.id) }}" class="img-fluid img-rounded mx-auto" alt="" />
+                                <img src="{{ url_for('produto.imagem', id_produto=produto.id) }}" class="img-fluid img-rounded mx-auto" alt="Imagem de {{ produto.nome }}" />
                             </div>
                         </div>
                     </div>
@@ -34,7 +34,7 @@
     </table>
     <a href="{{ url_for('produto.lista') }}">
         <button type="button" class="btn btn-secondary btn-sm">
-            {{ render_icon("x-lg") }}Cancelar alterações
+            {{ render_icon('x-lg') }}&nbsp;&nbsp;Cancelar alterações
         </button>
     </a>
 {% endmacro %}

@@ -12,12 +12,10 @@ def papeis_aceitos(*nomes_de_papeis):
             if not current_user.is_authenticated:
                 flash(login.login_message, category=login.login_message_category)
                 return redirect(url_for(login.login_view))
-            current_app.logger.debug(f"papeis_aceitos - user: {current_user.email}, papel: {nomes_de_papeis}, "
-                                     f"lista_de_papeis: {current_user.nomes_dos_papeis}")
             if not current_user.tem_papeis(nomes_de_papeis):
-                flash("Sem autorização para utilizar essa funcionalidade", category="warning")
+                flash("Sem autorização para utilizar essa funcionalidade", category='warning')
                 current_app.logger.debug(f"user: {current_user.email}, acesso não autorizado")
-                return redirect(request.referrer if request.referrer else url_for("/"))
+                return redirect(request.referrer if request.referrer else url_for('/'))
 
             return funcao_de_view(*args, **kwargs)
 

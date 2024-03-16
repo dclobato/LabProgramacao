@@ -13,7 +13,7 @@ from .base_mixin import TimestampMixin, BasicRepositoryMixin
 
 
 class Produto(db.Model, TimestampMixin, BasicRepositoryMixin):
-    __tablename__ = "produtos"
+    __tablename__ = 'produtos'
 
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -23,18 +23,18 @@ class Produto(db.Model, TimestampMixin, BasicRepositoryMixin):
     foto_base64: Mapped[Optional[Text]] = mapped_column(Text, nullable=True)
     foto_mime: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     possui_foto: Mapped[Boolean] = mapped_column(Boolean, default=False)
-    categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("categorias.id"))
+    categoria_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey('categorias.id'))
 
-    categoria = relationship("Categoria",  # Type: Mapped[Categoria]
-                             back_populates="lista_de_produtos")
+    categoria = relationship('Categoria',  # Type: Mapped[Categoria]
+                             back_populates='lista_de_produtos')
 
     def thumbnail(self, max_size: int = 64) -> (bytes, str):
         saida = io.BytesIO()
         max_size = min(max_size, 128)
         if not self.foto_base64 or not self.possui_foto or not self.foto_mime:
-            entrada = Image.new("RGB", (max_size, max_size), (128, 128, 128))
-            formato = "PNG"
-            mime_type = "image/png"
+            entrada = Image.new('RGB', (max_size, max_size), (128, 128, 128))
+            formato = 'PNG'
+            mime_type = 'image/png'
         else:
             entrada = Image.open(io.BytesIO(b64decode(self.foto_base64)))
             formato = entrada.format
@@ -50,11 +50,11 @@ class Produto(db.Model, TimestampMixin, BasicRepositoryMixin):
     def imagem(self) -> (bytes, str):
         if not self.foto_base64 or not self.possui_foto or not self.foto_mime:
             saida = io.BytesIO()
-            entrada = Image.new("RGB", (480, 480), (128, 128, 128))
-            formato = "PNG"
+            entrada = Image.new('RGB', (480, 480), (128, 128, 128))
+            formato = 'PNG'
             entrada.save(saida, format=formato)
             data = saida.getvalue()
-            mime_type = "image/png"
+            mime_type = 'image/png'
         else:
             data = b64decode(self.foto_base64)
             mime_type = self.foto_mime

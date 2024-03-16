@@ -21,12 +21,16 @@ class TimestampMixin:
 class BasicRepositoryMixin:
     @classmethod
     def is_empty(cls) -> bool:
-        return not db.session.execute(sa.select(cls).limit(1)).scalar_one_or_none()
+        return not (db.session.execute(sa.select(cls).
+                                       limit(1)).
+                    scalar_one_or_none())
 
     @classmethod
-    def get_tuples_id_atributo(cls, atributo: str = "nome") -> list[tuple[str, str]] | None:
+    def get_tuples_id_atributo(cls, atributo: str = 'nome') -> list[tuple[str, str]] | None:
         if hasattr(cls, atributo):
-            rset = db.session.execute(sa.select(cls).order_by(getattr(cls, atributo))).scalars()
+            rset = (db.session.execute(sa.select(cls).
+                                       order_by(getattr(cls, atributo))).
+                    scalars())
             rtuples = [(str(i.id), str(getattr(i, atributo))) for i in rset]
         else:
             rtuples = None
@@ -46,8 +50,10 @@ class BasicRepositoryMixin:
         registro = None
         if hasattr(cls, atributo):
             if casesensitive:
-                registro = (db.session.execute(
-                    sa.select(cls).where(getattr(cls, atributo) == valor).limit(1)).scalar_one_or_none())
+                registro = (db.session.execute(sa.select(cls).
+                                               where(getattr(cls, atributo) == valor).
+                                               limit(1)).
+                            scalar_one_or_none())
             else:
                 if isinstance(valor, str):
                     # noinspection PyTypeChecker
@@ -55,5 +61,5 @@ class BasicRepositoryMixin:
                         sa.select(cls).where(func.lower(getattr(cls, atributo)) == func.lower(valor)).limit(
                             1)).scalar_one_or_none())
                 else:
-                    raise TypeError(f"Para operação case insensitive, o atributo '{atributo}' deve ser da classe str")
+                    raise TypeError(f"Para operação case insensitive, o atributo \"{atributo}\" deve ser da classe str")
         return registro

@@ -15,7 +15,7 @@ class NovoProdutoForm(FlaskForm):
                             validators=[InputRequired(message="É necessário escolher uma categoria "
                                                               "válida para o produto")])
     foto_raw = FileField("Foto do produto",
-                         validators=[FileAllowed(["jpg", "png"],
+                         validators=[FileAllowed(['jpg', 'png'],
                                                  message="Apenas arquivos JPG ou PNG")])
     ativo = BooleanField("Produto ativo?", default=True, validators=[AnyOf([True, False])])
     submit = SubmitField("Adicionar")
@@ -30,7 +30,7 @@ class EditProdutoForm(FlaskForm):
                             validators=[InputRequired(message="É necessário escolher uma categoria "
                                                               "válida para o produto")])
     foto_raw = FileField("Foto do produto",
-                         validators=[FileAllowed(["jpg", "png"],
+                         validators=[FileAllowed(['jpg', 'png'],
                                                  message="Apenas arquivos JPG ou PNG")])
     ativo = BooleanField("Produto ativo?", default=True, validators=[AnyOf([True, False])])
     remover_imagem = BooleanField("Remover imagem?", default=False, validators=[AnyOf([True, False])])

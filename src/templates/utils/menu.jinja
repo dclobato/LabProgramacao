@@ -42,13 +42,13 @@
                             </li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown ms-5">
+                    <li class="nav-item dropdown ms-3">
                         <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
                             <span class="fw-semibold">
                                 {% if current_user.is_anonymous %}
                                     Acesso ao sistema
                                 {% else %}
-                                    <img src="{{ current_user.url_gravatar(32) }}" class="rounded-circle me-3 align-middle" alt="Avatar do usuário"/>{{ current_user.email }}
+                                    <img src="{{ current_user.url_gravatar(32) }}" class="rounded-circle me-2 align-middle" alt="Avatar do usuário"/>{{ current_user.email }}
                                 {% endif %}
                             </span>
                         </a>
@@ -59,7 +59,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('auth.register') }}">{{ render_icon('person-plus') }}&nbsp;Criar conta</a></li>
                         {% else %}
                             <li><a class="dropdown-item" href="{{ url_for('auth.user') }}">{{ render_icon('person') }}&nbsp;Perfil</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.management') }}">{{ render_icon('toggles') }}&nbsp;Configuração</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.management') }}">{{ render_icon('toggles') }}&nbsp;Gerenciamento dos usuários</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">{{ render_icon('box-arrow-right') }}&nbsp;Logout</a>
                         {% endif %}

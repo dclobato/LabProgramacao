@@ -7,18 +7,18 @@ from src.models.categoria import Categoria
 from src.modules import db
 from src.role_management import papeis_aceitos
 
-bp = Blueprint("categoria", __name__, url_prefix="/admin/categoria")
+bp = Blueprint('categoria', __name__, url_prefix='/admin/categoria')
 
 
-@bp.route("/", methods=["GET"])
+@bp.route('/', methods=['GET'])
 @login_required
 def lista():
     # noinspection PyPep8Naming
-    MAXPERPAGE = int(current_app.config.get("MAX_PER_PAGE", 500))
+    MAXPERPAGE = int(current_app.config.get('MAX_PER_PAGE', 500))
 
-    page = request.args.get("page", default=1, type=int)
-    pp = request.args.get("pp", default=10, type=int)
-    q = request.args.get("q", default=None, type=str)
+    page = request.args.get('page', default=1, type=int)
+    pp = request.args.get('pp', default=10, type=int)
+    q = request.args.get('q', default="", type=str)
 
     sentenca = db.select(Categoria)
 
@@ -26,7 +26,7 @@ def lista():
         pp = MAXPERPAGE
 
     # Filtrar por parte do nome
-    if q:
+    if q != "":
         sentenca = sentenca.filter(Categoria.nome.ilike(f"%{q}%"))
 
     sentenca = sentenca.order_by(Categoria.nome)
@@ -39,13 +39,17 @@ def lista():
         flash("Não existem registros na página solicitada. Apresentando primeira página", category='info')
         rset_page = db.paginate(sentenca, page=page, per_page=pp, max_per_page=MAXPERPAGE, error_out=True)
 
-    return render_template("categoria/lista.jinja", rset_page=rset_page, page=page, pp=pp, q=q,
+    return render_template('categoria/lista.jinja',
+                           rset_page=rset_page,
+                           page=page,
+                           pp=pp,
+                           q=q,
                            title="Lista de categorias")
 
 
-@bp.route("/novo", methods=["GET", "POST"])
+@bp.route('/novo', methods=['GET', 'POST'])
 @login_required
-@papeis_aceitos("Admin")
+@papeis_aceitos('Admin')
 def novo():
     form = NovoCategoriaForm()
     if form.validate_on_submit():
@@ -53,14 +57,16 @@ def novo():
         categoria.nome = form.nome.data
         db.session.add(categoria)
         db.session.commit()
-        flash(message=f"Categoria '{form.nome.data}' adicionada", category="success")
+        flash(message=f"Categoria \"{form.nome.data}\" adicionada", category='success')
         return redirect(url_for('categoria.lista'))
-    return render_template("render_simple_slim_form.jinja", title="Nova categoria", form=form)
+    return render_template('render_simple_slim_form.jinja',
+                           title="Nova categoria",
+                           form=form)
 
 
-@bp.route("/edit/<uuid:id_categoria>", methods=["GET", "POST"])
+@bp.route('/edit/<uuid:id_categoria>', methods=['GET', 'POST'])
 @login_required
-@papeis_aceitos("Admin")
+@papeis_aceitos('Admin')
 def edit(id_categoria):
     categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
@@ -72,25 +78,30 @@ def edit(id_categoria):
         categoria.nome = form.nome.data
         db.session.commit()
         flash(message="Categoria alterada!", category='success')
-        return redirect(url_for("categoria.lista"))
+        return redirect(url_for('categoria.lista'))
 
-    return render_template("categoria/edit.jinja", form=form, categoria=categoria, title="Alterar categoria")
+    return render_template('categoria/edit.jinja',
+                           form=form,
+                           categoria=categoria,
+                           title="Alterar categoria")
 
 
-@bp.route("/remove/<uuid:id_categoria>", methods=["GET", "POST"])
+@bp.route('/remove/<uuid:id_categoria>', methods=['GET', 'POST'])
 @login_required
-@papeis_aceitos("Admin")
+@papeis_aceitos('Admin')
 def remove(id_categoria):
     categoria = Categoria.get_by_id(id_categoria)
     if categoria is None:
         flash("Categoria inexistente!", category='danger')
         return redirect(url_for('categoria.lista'))
 
-    if request.method == "POST":  # confirmação da remoção
-        flash(message=f"Categoria '{categoria.nome}' e {len(categoria.lista_de_produtos)} produtos removidos!",
+    if request.method == 'POST':  # confirmação da remoção
+        flash(message=f"Categoria \"{categoria.nome}\" e {len(categoria.lista_de_produtos)} produtos removidos!",
               category='success')
         db.session.delete(categoria)
         db.session.commit()
-        return redirect(url_for("categoria.lista"))
+        return redirect(url_for('categoria.lista'))
 
-    return render_template("categoria/remove.jinja", categoria=categoria, title="Remover categoria")
+    return render_template('categoria/remove.jinja',
+                           categoria=categoria,
+                           title="Remover categoria")

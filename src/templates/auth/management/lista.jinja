@@ -17,22 +17,22 @@
             {{  rset }}
             {% for usuario in rset %}
                 <tr>
-                    <td>{{ usuario.nome }}</td>
-                    <td>
-                        {{ usuario.email }} {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_email', user_id=usuario.id) }}">{% endif %}{% if usuario.email_validado %}{{ render_icon("check", color="success") }}{% else %}{{ render_icon("x", color="danger") }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
+                    <td class="align-middle">{{ usuario.nome }}</td>
+                    <td class="align-middle">
+                        {{ usuario.email }} {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_email', user_id=usuario.id) }}">{% endif %}{% if usuario.email_validado %}{{ render_icon('check', color='success', size='2em') }}{% else %}{{ render_icon('x', color='danger', size='2em') }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
                     </td>
-                    <td class="small">{{ usuario.dta_ultimo_acesso | as_localtime }} de {{ usuario.ip_ultimo_acesso }}</td>
-                    <td class="small">{{ usuario.dta_acesso_atual | as_localtime }} de {{ usuario.ip_acesso_atual }}</td>
-                    <td class="text-center">
+                    <td class="small align-middle">{{ usuario.dta_ultimo_acesso | as_localtime }}{% if usuario.ip_ultimo_acesso %} de {{ usuario.ip_ultimo_acesso }}{% endif %}</td>
+                    <td class="small align-middle">{{ usuario.dta_acesso_atual | as_localtime }}{% if usuario.acesso_atual %} de {{ usuario.ip_acesso_atual }}{% endif %}</td>
+                    <td class="text-center align-middle">
                     {% if usuario.usa_2fa %}
-                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.disable_2fa', user_id=usuario.id) }}">{% endif %}{{ render_icon("check", color="success") }}{% if current_user.id != usuario.id %}</a>{% endif %}
+                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.disable_2fa', user_id=usuario.id) }}">{% endif %}{{ render_icon('check', color='success', size='2em') }}{% if current_user.id != usuario.id %}</a>{% endif %}
                     {% else %}
-                        {{ render_icon("x", color="danger") }}
+                        {{ render_icon('x', color='danger', size='2em') }}
                     {% endif %}
                     </td>
-                    <td class="small">{{ ", ".join(usuario.nomes_dos_papeis) }}</td>
-                    <td class="text-center">
-                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_active', user_id=usuario.id) }}">{% endif %}{% if usuario.is_active %}{{ render_icon("check", color="success") }}{% else %}{{ render_icon("x", color="danger") }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
+                    <td class="small align-middle">{{ ', '.join(usuario.nomes_dos_papeis) }}</td>
+                    <td class="text-center align-middle">
+                        {% if current_user.id != usuario.id %}<a href="{{ url_for('auth.flip_active', user_id=usuario.id) }}">{% endif %}{% if usuario.is_active %}{{ render_icon('check', color='success', size='2em') }}{% else %}{{ render_icon('x', color='danger', size='2em') }}{% endif %}{% if current_user.id != usuario.id %}</a>{% endif %}
                     </td>
                 </tr>
             {% endfor %}

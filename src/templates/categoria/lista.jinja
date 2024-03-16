@@ -6,7 +6,7 @@
 {% block content %}
     <div class="row justify-content-center">
         <div class="clearfix mb-4">
-            <form action="{{ url_for('categoria.lista') }}" method="get">
+            <form action="{{ url_for('categoria.lista') }}" method="GET">
                 <div class="float-start small">
                     <div class="hstack gap-3">
                         {{ linhas_por_pagina(pp) }}
@@ -33,10 +33,10 @@
                     <td class="text-end">{{ categoria.lista_de_produtos | count }}</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('categoria.edit', id_categoria=categoria['id']) }}">
-                                {{ render_icon("pencil-square", title="Alterar") }}</a>
-                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('categoria.remove', id_categoria=categoria['id']) }}">
-                                {{ render_icon("trash", title="Excluir") }}</a>
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('categoria.edit', id_categoria=categoria.id) }}">
+                                {{ render_icon('pencil-square', title='Alterar') }}</a>
+                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('categoria.remove', id_categoria=categoria.id) }}">
+                                {{ render_icon('trash', title='Excluir') }}</a>
                         </div>
                     </td>
                 </tr>
@@ -50,8 +50,8 @@
                 Mostrando itens {{ rset_page.first }} a {{ rset_page.last }} de um total de {{ rset_page.total }}
             </div>
             <div class="float-end">
-                {{ render_pagination(rset_page, "categoria.lista", size="sm", align="right",
-                                    args={"pp": pp}) }}
+                {{ render_pagination(rset_page, 'categoria.lista', size='sm', align='right',
+                                    args={'pp': pp, 'q': q}) }}
             </div>
         </div>
     </div>

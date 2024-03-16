@@ -20,8 +20,8 @@ class ValidaSenha:
 
         if not re.match(pattern, str(password.data)):
             raise ValidationError(
-                'A sua senha precisa ter entre 8 e 32 caracteres e conter letras maiúsculas,'
-                ' minúsculas, números e símbolos especiais')
+                "A sua senha precisa ter entre 8 e 32 caracteres e conter letras maiúsculas, "
+                "minúsculas, números e símbolos especiais")
 
 
 class LoginForm(FlaskForm):
@@ -41,42 +41,42 @@ class AskToResetPassword(FlaskForm):
                         validators=[InputRequired(
                             message="É obrigatório informar o email para o qual se deseja definir nova senha"),
                             Email(message="Informe um email válido", check_deliverability=False)])
-    submit = SubmitField('Redefinir a senha')
+    submit = SubmitField("Redefinir a senha")
 
 
 class SetNewPasswordForm(FlaskForm, ValidaSenha):
-    password = PasswordField('Nova senha',
+    password = PasswordField("Nova senha",
                              validators=[InputRequired(message="É necessário escolher uma senha")])
-    password2 = PasswordField('Confirme a nova senha',
+    password2 = PasswordField("Confirme a nova senha",
                               validators=[InputRequired(message="É necessário repetir a senha"),
-                                          EqualTo('password', message="As senhas não são iguais")])
-    submit = SubmitField('Cadastrar a nova senha')
+                                          EqualTo("password", message="As senhas não são iguais")])
+    submit = SubmitField("Cadastrar a nova senha")
 
 
 # noinspection PyMethodMayBeStatic
 class RegistrationForm(FlaskForm, ValidaSenha):
-    nome = StringField('Nome',
+    nome = StringField("Nome",
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
     email = StringField("Email",
                         validators=[InputRequired(message="É obrigatório informar o email do cadastro"),
                                     Email(message="Informe um email válido", check_deliverability=True)])
 
-    password = PasswordField('Senha',
+    password = PasswordField("Senha",
                              validators=[InputRequired(message="É necessário escolher uma senha")])
-    password2 = PasswordField('Confirme a senha',
+    password2 = PasswordField("Confirme a senha",
                               validators=[InputRequired(message="É necessário repetir a senha"),
                                           EqualTo('password', message="As senhas não são iguais")])
-    submit = SubmitField('Adicionar usuário')
+    submit = SubmitField("Adicionar usuário")
 
     def validate_email(self, email):
         from src.models.usuario import User
         user = User.get_by_email(email.data)
         if user:
-            raise ValidationError('Este email já está cadastrado')
+            raise ValidationError("Este email já está cadastrado")
 
 
 class ProfileForm(FlaskForm):
-    nome = StringField('Nome',
+    nome = StringField("Nome",
                        validators=[InputRequired(message="É obrigatório informar o nome para cadastro")])
     usa_2fa = BooleanField("Ativar autenticação em dois fatores")
     submit = SubmitField("Efetuar mudanças")
@@ -85,9 +85,10 @@ class ProfileForm(FlaskForm):
 class Read2FACodeForm(FlaskForm):
     # https://web.dev/articles/sms-otp-form
     codigo = StringField("Código",
-                         validators=[InputRequired(message="Informe o código fornecido pelo aplicativo autenticador"),
+                         validators=[InputRequired(message="Informe o código fornecido pelo aplicativo "
+                                                           "autenticador, ou um dos códigos reserva"),
                                      Length(min=6, max=6)],
-                         render_kw={"inputmode": "numeric",
-                                    "autocomplete": "one-time-code",
-                                    "pattern": r"\d{6}"})
+                         render_kw={'inputmode': 'numeric',
+                                    'autocomplete': 'one-time-code',
+                                    'pattern': r'\d{6}'})
     submit = SubmitField("Enviar código")

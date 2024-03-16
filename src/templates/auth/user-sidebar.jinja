@@ -23,12 +23,12 @@
         </tr>
         <tr>
             <th scope="row" class="text-start">Papéis</th>
-            <td class="text-end">{{ ", ".join(current_user.nomes_dos_papeis) }}</td>
+            <td class="text-end">{{ ', '.join(current_user.nomes_dos_papeis) }}</td>
         </tr>
         {% if current_user.usa_2fa %}
         <tr>
             <th scope="row" class="text-start">Autenticação em dois fatores</th>
-            <td class="text-center">{{ render_icon('shield-fill-check', size=24, color="success") }}</td>
+            <td class="text-center">{{ render_icon('shield-fill-check', size='1.5em', color='success') }}</td>
         </tr>
             <tr>
                 <th scope="row">Códigos reserva disponíveis</th>
@@ -37,7 +37,7 @@
         {% else %}
             <tr>
                 <th scope="row" class="text-start">Autenticação em dois fatores</th>
-                <td class="text-center">{{ render_icon('shield-fill-x', size=24, color="danger") }}</td>
+                <td class="text-center">{{ render_icon('shield-fill-x', size='1.5em', color='danger') }}</td>
             </tr>
         {% endif %}
     </table>

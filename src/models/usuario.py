@@ -24,12 +24,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from src.modules import db
 from .base_mixin import TimestampMixin, BasicRepositoryMixin
 
-users_roles = Table("usersroles", db.Model.metadata, Column("usuario_id", ForeignKey("usuarios.id"), primary_key=True),
-                    Column("role_id", ForeignKey("roles.id"), primary_key=True))
+users_roles = Table('usersroles',
+                    db.Model.metadata,
+                    Column('usuario_id', ForeignKey('usuarios.id'), primary_key=True),
+                    Column('role_id', ForeignKey('roles.id'), primary_key=True))
 
 
 class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
-    __tablename__ = "usuarios"
+    __tablename__ = 'usuarios'
 
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome: Mapped[str] = mapped_column(String(60), nullable=False)
@@ -50,12 +52,15 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     ultimo_otp: Mapped[Optional[str]] = mapped_column(String(6), nullable=True)
     dta_ativacao_2fa: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True)
 
-    lista_2fa_backup = relationship("Backup2FA",  # Type: Mapped[Optional[List[Backup2FA]]]
-                                    back_populates="usuario", lazy="select", cascade="all, delete-orphan")
+    lista_2fa_backup = relationship('Backup2FA',  # Type: Mapped[Optional[List[Backup2FA]]]
+                                    back_populates='usuario',
+                                    lazy='select',
+                                    cascade='all, delete-orphan')
 
-    pertence_aos_papeis: Mapped[List["Role"]] = relationship(secondary=users_roles,  # Type: Mapped[List[Role]]
-                                                             lazy="select", back_populates="usuarios_no_papel",
-                                                             cascade="all, delete")
+    pertence_aos_papeis: Mapped[List['Role']] = relationship(secondary=users_roles,  # Type: Mapped[List[Role]]
+                                                             lazy='select',
+                                                             back_populates='usuarios_no_papel',
+                                                             cascade='all, delete')
 
     @property
     def is_active(self):
@@ -73,7 +78,7 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         img = qr.make_image(fill_color='black', back_color='white')
         buffered = BytesIO()
         img.save(buffered)
-        return b64encode(buffered.getvalue()).decode("utf-8")
+        return b64encode(buffered.getvalue()).decode('utf-8')
 
     @property
     def email(self) -> str:
@@ -95,28 +100,29 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     @classmethod
     def get_by_email(cls, user_email) -> Self | None:
         user_email = email_validator.validate_email(user_email, check_deliverability=False).normalized.lower()
-        return cls.get_first_or_none_by("email_normalizado", user_email)
+        return cls.get_first_or_none_by('email_normalizado', user_email)
 
     @property
     def get_totp_uri(self) -> str:
-        return pyotp.totp.TOTP(self.otp_secret).provisioning_uri(name=self.email, issuer_name='App2024')
+        otp = pyotp.totp.TOTP(self.otp_secret)
+        return otp.provisioning_uri(name=self.email, issuer_name=current_app.config.get('APP_NAME'))
 
     @staticmethod
     def verify_jwt_token(token):
         try:
-            payload = jwt.decode(token, key=current_app.config.get("SECRET_KEY"), algorithms=["HS256"])
+            payload = jwt.decode(token, key=current_app.config.get('SECRET_KEY'), algorithms=['HS256'])
         except Exception as e:
             current_app.logger.error(f"JWT Token validation: {e}")
             return None, None
         else:
-            user_id = uuid.UUID(payload.get("user", None))
-            action = payload.get("action", None)
+            user_id = uuid.UUID(payload.get('user', None))
+            action = payload.get('action', None)
 
         return User.get_by_id(user_id), action
 
     def url_gravatar(self, size: int = 32) -> str:
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
+        return f"https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}"
 
     def set_password(self, password):
         # noinspection PyTypeChecker
@@ -127,8 +133,8 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
 
     def create_jwt_token(self, action: str, expires_in: int = 600):
         from flask import current_app
-        payload = {"user": str(self.id), "action": action.lower(), "exp": time() + expires_in}
-        return jwt.encode(payload=payload, key=current_app.config.get("SECRET_KEY"), algorithm="HS256")
+        payload = {'user': str(self.id), 'action': action.lower(), 'exp': time() + expires_in}
+        return jwt.encode(payload=payload, key=current_app.config.get('SECRET_KEY'), algorithm='HS256')
 
     def verify_totp(self, token) -> bool:
         totp = pyotp.TOTP(self.otp_secret)
@@ -141,7 +147,7 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         # Gera novos códigos
         codigos = []
         for _ in range(quantos):
-            codigo = "".join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(6))
+            codigo = "".join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
             codigos.append(codigo)
             backup2fa = Backup2FA()
             backup2fa.hash_codigo = generate_password_hash(codigo)
@@ -158,9 +164,9 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     def send_email(self, subject: str = "Mensagem do sistema", body: str = "") -> bool:
         msg = EmailMessage()
         msg.to = [self.email]
-        msg.subject = f"[{current_app.config.get("APP_NAME")}] {subject}"
+        msg.subject = f"[{current_app.config.get('APP_NAME')}] {subject}"
         msg.body = body
-        msg.extra_headers["Message-ID"] = f"{str(uuid.uuid4())}@{current_app.config.get('APP_MTA_MESSAGEID')}"
+        msg.extra_headers['Message-ID'] = f"{str(uuid.uuid4())}@{current_app.config.get('APP_MTA_MESSAGEID')}"
         try:
             msg.send()
         except smtplib.SMTPException:
@@ -174,15 +180,11 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         # traduz para:
         # usuario tem papel 'a' AND (papel 'b' OR papel 'c') AND papel 'd'
         papeis_do_usuario = self.nomes_dos_papeis
-        current_app.logger.debug(f"Papeis do usuario: {papeis_do_usuario}")
-        current_app.logger.debug(f"Papeis necessarios: {papeis_necessarios}")
         for papel in papeis_necessarios:
-            current_app.logger.debug(f"Papel: {papel}, tipo {type(papel)}")
             if isinstance(papel, (list, tuple)):
                 tupla_de_nomes_de_papel = papel
                 autorizado = False
                 for nome_de_papel in tupla_de_nomes_de_papel:
-                    current_app.logger.debug(f"lista - Testando '{nome_de_papel}' contra '{papeis_do_usuario}'")
                     if nome_de_papel in papeis_do_usuario:
                         autorizado = True
                         break
@@ -190,21 +192,20 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
                     return False
             else:
                 nome_de_papel = papeis_necessarios
-                current_app.logger.debug(f"single - Testando '{nome_de_papel}' contra '{papeis_do_usuario}'")
                 if nome_de_papel not in papeis_do_usuario:
                     return False
         return True
 
 
 class Backup2FA(db.Model):
-    __tablename__ = "backup2fa"
+    __tablename__ = 'backup2fa'
 
     id: Mapped[Integer] = mapped_column(Integer, primary_key=True)
     hash_codigo: Mapped[str] = mapped_column(String(256), nullable=False)
-    usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("usuarios.id"))
+    usuario_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey('usuarios.id'))
 
-    usuario = relationship("User",  # Type: Mapped[User]
-                           back_populates="lista_2fa_backup")
+    usuario = relationship('User',  # Type: Mapped[User]
+                           back_populates='lista_2fa_backup')
 
 
 class Role(db.Model, BasicRepositoryMixin):
@@ -213,8 +214,9 @@ class Role(db.Model, BasicRepositoryMixin):
     id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome: Mapped[str] = mapped_column(String(60), nullable=False, unique=True, index=True)
 
-    usuarios_no_papel: Mapped[List["User"]] = relationship(secondary=users_roles,  # Type:
-                                                           lazy="select", back_populates="pertence_aos_papeis",
+    usuarios_no_papel: Mapped[List['User']] = relationship(secondary=users_roles,  # Type:
+                                                           lazy='select',
+                                                           back_populates='pertence_aos_papeis',
                                                            viewonly=True)
 
     def __init__(self, _nome: str):

@@ -17,8 +17,8 @@
                     <td>{{ produto.nome }}</td>
                     <td class="text-end">R$ {{ "%.2f" % produto.preco }}</td>
                     <td class="text-end">{{ produto.estoque }}</td>
-                    <td class="text-center">{% if produto.ativo %}{{ render_icon("check-all", color="success") }}
-                    {% else %}{{ render_icon("dash-circle-fill", color="danger") }}{% endif %}</td>
+                    <td class="text-center">{% if produto.ativo %}{{ render_icon('check-all', color='success', size='1.5em') }}
+                    {% else %}{{ render_icon('x', color='danger', size='1.5em') }}{% endif %}</td>
                     <td>{{ produto.categoria.nome }}</td>
                 </tr>
             {% endfor %}
