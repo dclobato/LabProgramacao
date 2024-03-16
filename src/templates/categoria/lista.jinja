@@ -29,14 +29,14 @@
             <tbody>
             {% for categoria in rset_page %}
                 <tr>
-                    <td>{{ categoria.nome }}</td>
-                    <td class="text-end">{{ categoria.lista_de_produtos | count }}</td>
-                    <td class="text-center">
+                    <td class="align-middle">{{ categoria.nome }}</td>
+                    <td class="text-end align-middle">{{ categoria.lista_de_produtos | count }}</td>
+                    <td class="text-center align-middle">
                         <div class="btn-group" role="group">
                             <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('categoria.edit', id_categoria=categoria.id) }}">
-                                {{ render_icon('pencil-square', title='Alterar') }}</a>
+                                {{ render_icon('pencil-square', size='1.25em', title="Alterar") }}</a>
                             <a class="btn btn-outline-danger btn-sm" href="{{ url_for('categoria.remove', id_categoria=categoria.id) }}">
-                                {{ render_icon('trash', title='Excluir') }}</a>
+                                {{ render_icon('trash', size='1.25em', title="Excluir") }}</a>
                         </div>
                     </td>
                 </tr>
