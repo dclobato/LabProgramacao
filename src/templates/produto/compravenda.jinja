@@ -1,0 +1,49 @@
+{% extends '_Layout.jinja' %}
+{% from 'bootstrap5/utils.html' import render_icon %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+    <div class="ms-5 flex-grow-1">
+    {% if resultado %}
+    <h3 class="mb-4">Resultado do processamento do arquivo enviado</h3>
+    <ul>
+        {% for linha in linhas %}
+            <li class="mb-2" style="list-style-type: none;">{{ render_icon(linha[1], size='1.5em', color=linha[2]) }}&nbsp;&nbsp;{{ linha[0] }}</li>
+        {% endfor %}
+    </ul>
+    <hr class="my-5"/>
+    {% endif %}
+    <h5>Instruções</h5>
+    <ul>
+        <li class="my-4">Para obter uma lista em formato JSON contendo todos os códigos de produto, <a href="{{ url_for('produto.listajson')}}">clique aqui</a></li>
+        <li class="my-4">Construa um arquivo JSON seguindo o modelo abaixo</li>
+        <pre>
+    [
+        {
+            "id": "0405edaf-9592-417d-b1d0-9f7fbf601e45",
+            "nome": "Batata Doce Amarela Benassi 1 Unidade Aprox 430g",
+            "limitado": false,
+            "quantidade": -22
+        },
+        {
+            "id": "e8cda765-4e77-44d3-9153-f45adeaf5487",
+            "nome": "Leite Itambé Integral 1L",
+            "quantidade": 5
+        }
+    ]
+        </pre>
+        <div class="alert alert-light w-75" role="alert">
+            <h4 class="alert-heading">Modelo de arquivo</h4>
+            <ul>
+                <li>A chave <span class="font-monospace text-secondary">id</span> deve conter o identificador do produto no sistema;</li>
+                <li>A chave <span class="font-monospace text-secondary">nome</span> é opcional. Ela não será processada pelo sistema;</li>
+                <li>A chave <span class="font-monospace text-secondary">quantidade</span> deve contar um número inteiro, diferente de zero, indicando quantas unidades foram compradas (se positivo) ou vendidas (se negativo)</li>
+                <li>A chave <span class="font-monospace text-secondary">limitado</span> indica se uma operação de venda pode (se <span class="font-monospace font-weight-bold text-secondary">false</span>) ou não pode (se <span class="font-monospace font-weight-bold text-secondary">true</span>) deixar o estoque negativo. Operações que possuam <span class="font-monospace font-weight-bold text-secondary">"limitado": true</span> não serão executadas se, após elas, o estoque ficar negativo.</li>
+                <li>Se não indicado, assume-se <span class="font-monospace font-weight-bold">"limitado": true</span></li>
+                <li>Um mesmo produto pode aparecer várias vezes no arquivo</li>
+            </ul>
+        </div>
+    </ul>
+    </div>
+    {{ render_form(form, button_style='primary') }}
+{% endblock %}

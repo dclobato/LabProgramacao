@@ -1,3 +1,4 @@
+import datetime
 import random
 import smtplib
 import uuid
@@ -9,7 +10,6 @@ from typing import Optional, Self, List
 
 import email_validator
 import jwt
-import jwt.exceptions
 import pyotp
 from flask import current_app
 from flask_login import UserMixin
@@ -110,8 +110,11 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
     @staticmethod
     def verify_jwt_token(token):
         try:
-            payload = jwt.decode(token, key=current_app.config.get('SECRET_KEY'), algorithms=['HS256'])
-        except Exception as e:
+            payload = jwt.decode(token,
+                                 key=current_app.config.get('SECRET_KEY'),
+                                 algorithms=['HS256'],
+                                 leeway=datetime.timedelta(seconds=10))
+        except jwt.exceptions.PyJWTError as e:
             current_app.logger.error(f"JWT Token validation: {e}")
             return None, None
         else:
@@ -132,9 +135,14 @@ class User(db.Model, TimestampMixin, BasicRepositoryMixin, UserMixin):
         return check_password_hash(self.password_hash, password)
 
     def create_jwt_token(self, action: str, expires_in: int = 600):
-        from flask import current_app
-        payload = {'user': str(self.id), 'action': action.lower(), 'exp': time() + expires_in}
-        return jwt.encode(payload=payload, key=current_app.config.get('SECRET_KEY'), algorithm='HS256')
+        payload = {
+            'user': str(self.id),
+            'action': action.lower(),
+            'exp': time() + expires_in
+        }
+        return jwt.encode(payload=payload,
+                          key=current_app.config.get('SECRET_KEY'),
+                          algorithm='HS256')
 
     def verify_totp(self, token) -> bool:
         totp = pyotp.TOTP(self.otp_secret)

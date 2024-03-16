@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from werkzeug.exceptions import NotFound
@@ -7,7 +8,7 @@ from flask import Blueprint, render_template, flash, redirect, url_for, request,
 from flask_login import login_required
 
 from src.role_management import papeis_aceitos
-from src.forms.produto import NovoProdutoForm, EditProdutoForm
+from src.forms.produto import NovoProdutoForm, EditProdutoForm, CompraVendaProdutoForm
 from src.models.produto import Produto
 from src.models.categoria import Categoria
 from src.modules import db
@@ -224,3 +225,83 @@ def emfalta():
         return render_template('produto/emfalta.jinja',
                                title="Produtos em falta",
                                rset=rset)
+
+@bp.route('/compravenda', methods=['GET', 'POST'])
+@login_required
+def compravenda():
+    form = CompraVendaProdutoForm()
+    if form.validate_on_submit():
+        if 'arquivo_transacoes' not in request.files:
+            flash("Arquivo não enviado", category='warning')
+            return redirect(url_for('produto.compravenda'))
+        arquivo = request.files['arquivo_transacoes']
+        if arquivo.mimetype != 'application/json':
+            flash("Arquivo enviado não é um JSON", category='warning')
+            return redirect(url_for('produto.compravenda'))
+        try:
+            dados = arquivo.read().decode('utf-8')
+        except UnicodeDecodeError:
+            flash("Arquivo enviado não está no formato UTF-8", category='warning')
+            return redirect(url_for('produto.compravenda'))
+
+        try:
+            transacoes = json.loads(dados)
+        except json.JSONDecodeError:
+            flash("Arquivo enviado não é um arquivo JSON bem formado", category='warning')
+            return redirect(url_for('produto.compravenda'))
+
+        saida = list()
+        for transacao in transacoes:
+            produto = Produto.get_by_id(transacao.get('id'))
+            if not produto:
+                saida.append((f"Produto {transacao.get('id')} não encontrado", 'x', 'warning'))
+                continue
+            try:
+                qtd = int(transacao.get('quantidade'))
+            except ValueError:
+                saida.append((f"Produto \"{produto.nome}\" com quantidade indicada de forma incorreta", 'x', 'warning'))
+                continue
+            except KeyError:
+                saida.append((f"Produto \"{produto.nome}\" sem quantidade indicada", 'x', 'warning'))
+                continue
+            limitado = transacao.get('limitado', True)
+            novo_estoque = produto.estoque + qtd
+            if limitado and novo_estoque < 0:
+                if qtd > 0:
+                    saida.append((f"Comprar {qtd:d} unidade do produto \"{produto.nome}\" vai deixá-lo com {novo_estoque:d} unidades, e não é possível deixar estoque negativo", 'x', 'warning'))
+                else:
+                    saida.append((f"Vender {qtd * -1:d} unidade do produto \"{produto.nome}\" vai deixá-lo com {novo_estoque:d} unidades, e não é possível deixar estoque negativo", 'x', 'warning'))
+                continue
+            produto.estoque = novo_estoque
+            if qtd > 0:
+                saida.append((f"Depois de comprar {qtd:d} unidade do produto \"{produto.nome}\" temos {novo_estoque:d} unidades em estoque", 'check', 'success'))
+            else:
+                saida.append((f"Depois de vender {qtd * -1:d} unidade do produto \"{produto.nome}\" temos {novo_estoque:d} unidades em estoque", 'check', 'success'))
+            db.session.commit()
+
+        flash("Operações de compra e venda executadas", category='success')
+        return render_template('produto/compravenda.jinja',
+                               title="Compras e vendas",
+                               resultado=True,
+                               linhas=saida,
+                               form=form)
+    return render_template('produto/compravenda.jinja',
+                           title="Compras e vendas",
+                           resultado=False,
+                           linhas=list(),
+                           form=form)
+
+@bp.route('/listajson', methods=['GET'])
+@login_required
+def listajson():
+    sentenca = db.select(Produto).order_by(Produto.nome)
+    rset = db.session.execute(sentenca).scalars()
+    retorno = list()
+    for produto in rset:
+        item = dict()
+        item['id'] = str(produto.id)
+        item['nome'] = produto.nome
+        retorno.append(item)
+    return Response(json.dumps(retorno, indent=2, sort_keys=True,ensure_ascii=False).encode('utf8'),
+                    headers={'Content-Disposition': 'attachment;filename=produtos.json'},
+                    mimetype='application/json')

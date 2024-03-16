@@ -35,3 +35,8 @@ class EditProdutoForm(FlaskForm):
     ativo = BooleanField("Produto ativo?", default=True, validators=[AnyOf([True, False])])
     remover_imagem = BooleanField("Remover imagem?", default=False, validators=[AnyOf([True, False])])
     submit = SubmitField("Alterar")
+
+class CompraVendaProdutoForm(FlaskForm):
+    arquivo_transacoes = FileField("Arquivo com as transações",
+                                   validators=[FileAllowed(['json'], message="Apenas arquivos JSON")])
+    submit = SubmitField("Enviar")
