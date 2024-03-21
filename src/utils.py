@@ -1,6 +1,9 @@
 import datetime
+import sys
+from pathlib import Path
 
 import pytz
+from flask import Flask
 
 
 # Formatando as datas para horário local
@@ -24,3 +27,23 @@ def as_localtime(value) -> str | datetime.date:
 
 def timestamp():
     return datetime.datetime.now(tz=pytz.timezone('UTC'))
+
+
+def existe_esquema(app: Flask) -> bool:
+    # Se estivéssemos usando um SGBD, poderíamos consultar os metadados
+    # do esquema com algo como a linha abaixo para o MariaDB/MySQL
+    # SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'DBName'
+    # Como o sqlite é um arquivo no sistema de arquivos, vamos simplesmente
+    # verificar se o arquivo existe
+    arquivo = Path(app.instance_path) / Path(app.config.get('SQLITE_DB_NAME', 'application_db.sqlite3'))
+    return arquivo.is_file()
+    # configurar o alembic
+    #    alembic init instance/migrations
+    #
+    # ajustar o alembic.ini
+    #    [alembic]
+    #    sqlalchemy.url = sqlite+pysqlite:///instance/application_db.sqlite3
+    #
+    # ajustar o env.py (l21-22)
+    #    from src.modules import Base
+    #    target_metadata = Base.metadata

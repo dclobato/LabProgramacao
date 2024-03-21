@@ -3,6 +3,10 @@
   "__comogerar": "python -c 'import secrets; print(secrets.token_hex())'",
   "TIMEZONE": "America/Sao_Paulo",
 
+  "APP_BASE_URL": "http://127.0.0.1:5000",
+  "APP_MTA_MESSAGEID": "localhost.localdomain",
+  "APP_NAME": "Meu App 2024",
+
   "MINIFY": false,
 
   "BOOTSTRAP_SERVE_LOCAL": true,
@@ -10,7 +14,6 @@
   "BOOTSTRAP_BOOTSWATCH_THEME": "sandstone",
 
   "SQLALCHEMY_DATABASE_URI": "sqlite+pysqlite:///application_db.sqlite3",
-  "MIGRATION_DIR": "src/migrations",
   "SQLITE_DB_NAME": "application_db.sqlite3",
 
   "MAIL_SERVER": "smtp.sendgrid.net",

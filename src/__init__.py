@@ -2,23 +2,21 @@ import json
 import logging
 import os
 import random
-import shutil
+import sys
 import uuid
 from pathlib import Path
 
 from flask import Flask, render_template, request
 from flask_login import user_logged_in
-from flask_migrate import init, upgrade, revision
 
 import src.routes.auth
 import src.routes.categoria
 import src.routes.produto
-import src.utils
+from src import utils
 from src.models.usuario import User, Role
 from src.models.categoria import Categoria
 from src.models.produto import Produto
-from src.modules import bootstrap, minify, db, migration, csrf, login, mail
-from src.utils import as_localtime
+from src.modules import bootstrap, minify, db, csrf, login, mail
 
 
 def create_app(config_filename: str = 'config.dev.json') -> Flask:
@@ -41,26 +39,25 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
     # Definindo o nível de logging da aplicação
     app.logger.setLevel(logging.DEBUG)
 
-    app.logger.debug(f"Carregando o arquivo de configuração {config_filename}")
+    app.logger.debug("Carregando o arquivo de configuração %s" % config_filename)
     try:
         app.config.from_file(config_filename, load=json.load)
     except FileNotFoundError as e:
-        app.logger.fatal(f"Arquivo \"{config_filename}\" não encontrado")
-        app.logger.fatal(f"Exception: {e}")
+        app.logger.fatal("Arquivo \"%s\" não encontrado" % config_filename)
+        app.logger.fatal("Exception: %s" % e)
         exit(1)
 
     mandatory_keys = [
         'APP_BASE_URL',
         'APP_MTA_MESSAGEID',
         'APP_NAME',
-        'MIGRATION_DIR',
         'SECRET_KEY',
         'SQLALCHEMY_DATABASE_URI',
         'TIMEZONE',
     ]
     for key in mandatory_keys:
         if app.config.get(key, None) is None:
-            app.logger.fatal(f"Necessário definir a chave \"{key}\" no arquivo {config_filename}")
+            app.logger.fatal("Necessário definir a chave \"%s\" no arquivo %s" % (key, config_filename))
             exit(1)
 
     app.logger.debug("Inicializando módulos básicos")
@@ -69,7 +66,6 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
         if app.config.get('MINIFY'):
             minify.init_app(app)
     db.init_app(app)
-    migration.init_app(app, db, directory=app.config.get('MIGRATION_DIR'), render_as_batch=True)
     csrf.init_app(app)
     mail.init_app(app)
     login.init_app(app)
@@ -80,7 +76,7 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
 
     # Formatando as datas para horário local
     # https://stackoverflow.com/q/65359968
-    app.jinja_env.filters['as_localtime'] = as_localtime
+    app.jinja_env.filters['as_localtime'] = utils.as_localtime
 
     app.logger.debug("Registrando as blueprints")
     app.register_blueprint(src.routes.auth.bp)
@@ -88,27 +84,15 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
     app.register_blueprint(src.routes.produto.bp)
 
     with app.app_context():
-        # Se estivéssemos usando um SGBD, poderíamos consultar os metadados
-        # do esquema com algo como a linha abaixo para o MariaDB/MySQL
-        # SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'DBName'
-        # Como o sqlite é um arquivo no sistema de arquivos, vamos simplesmente
-        # verificar se o arquivo existe
-        arquivo = Path(app.instance_path) / Path(app.config.get('SQLITE_DB_NAME', 'application_db.sqlite3'))
-        if not arquivo.is_file():
-            app.logger.info(f"Criando o banco de dados em {arquivo}")
-            if Path(migration.directory).is_dir():
-                app.logger.info(f"Removendo o diretorio anterior de migracoes")
-                shutil.rmtree(Path(migration.directory))
-            app.logger.info(f"Efetuando a migração inicial")
-            init()
-            revision(message="Migracao inicial de dentro da App", autogenerate=True, head='head')
-            upgrade(revision='head')
+        if not utils.existe_esquema(app):
+            app.logger.fatal("Necessário fazer a migração/upgrade do banco")
+            sys.exit(1)
 
         if Role.is_empty():
             papeis = ['Admin', 'Usuario']
             for nome_papel in papeis:
                 db.session.add(Role(nome_papel))
-                app.logger.info(f"Adicionando papel \"{nome_papel}\"")
+                app.logger.info("Adicionando papel \"%s\"" % nome_papel)
             db.session.commit()
 
         if User.is_empty():
@@ -127,7 +111,7 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
                  },
             ]
             for usuario in usuarios:
-                app.logger.info(f"Adicionando usuário ({usuario.get('email')}:{usuario.get('senha')})")
+                app.logger.info("Adicionando usuário (%s:%s)" % (usuario.get('email'), usuario.get('senha')))
                 novo_usuario = User()
                 novo_usuario.nome = usuario.get('nome')
                 novo_usuario.email = usuario.get('email')
@@ -139,7 +123,7 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
                 for nome_papel in usuario.get('papeis'):
                     papel = Role.get_first_or_none_by('nome', nome_papel, casesensitive=False)
                     if not papel:
-                        raise ValueError(f"Papel \"{nome_papel}\" inexistente")
+                        raise ValueError("Papel \"%s\" inexistente" % nome_papel)
                     novo_usuario.pertence_aos_papeis.append(papel)
                 db.session.add(novo_usuario)
                 db.session.commit()
@@ -164,7 +148,7 @@ def create_app(config_filename: str = 'config.dev.json') -> Flask:
                     db.session.add(produto)
                 db.session.commit()
             app.logger.info("Semeadura das tabelas concluída")
-            app.logger.info(f"Adicionados {pc} produtos em {cc} categorias")
+            app.logger.info("Adicionados %d produtos em %d categorias" % (pc, cc))
 
     @user_logged_in.connect_via(app)
     def update_login_details(sender_app, user):
